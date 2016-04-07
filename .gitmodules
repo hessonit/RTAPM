@@ -1,0 +1,12 @@
+[submodule "libs/libfreenect2"]
+	path = libs/libfreenect2
+	url = https://github.com/OpenKinect/libfreenect2.git
+[submodule "libs/opencv"]
+	path = libs/opencv
+	url = https://github.com/Itseez/opencv.git
+[submodule "libs/glfw"]
+	path = libs/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "libs/libjpeg-turbo"]
+	path = libs/libjpeg-turbo
+	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
