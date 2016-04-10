@@ -3,10 +3,10 @@
 	url = git@github.com:OpenKinect/libfreenect2.git
 [submodule "libs/opencv"]
 	path = libs/opencv
-	url = https://github.com/Itseez/opencv.git
+	url = git@github.com:Itseez/opencv.git
 [submodule "libs/glfw"]
 	path = libs/glfw
-	url = https://github.com/glfw/glfw.git
+	url = git@github.com:glfw/glfw.git
 [submodule "libs/libjpeg-turbo"]
 	path = libs/libjpeg-turbo
-	url = https://github.com/libjpeg-turbo/libjpeg-turbo.git
+	url = git@github.com:libjpeg-turbo/libjpeg-turbo.git
