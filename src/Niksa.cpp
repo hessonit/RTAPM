@@ -20,129 +20,11 @@
 #include "viewer.h"
 #include "VideoFaceDetector.h"
 
-
-
-//#define PI 3.14159265
-using namespace cv;
-/// [main]
-
- void detectAndDisplay( Mat frame );
-  
-void fill(Calibration *c)
-{
-//  c->worldCoordinatesChessboardBuffer.resize(5);
-//c->imageCoordinatesChessboardBuffer.resize(5);
-//c->worldCoordinatesChessboardBuffer[0].push_back(Point3f(1.47038,25.6647,127.518));
-//c->imageCoordinatesChessboardBuffer[0].push_back(Point2f(230,230));
-//c->worldCoordinatesChessboardBuffer[0].push_back(Point3f(-2.40759,11.5921,129.929));
-//c->imageCoordinatesChessboardBuffer[0].push_back(Point2f(350,260));
-//c->worldCoordinatesChessboardBuffer[0].push_back(Point3f(-9.07824,22.0603,128.855));
-//c->imageCoordinatesChessboardBuffer[0].push_back(Point2f(260,320));
-//c->worldCoordinatesChessboardBuffer[0].push_back(Point3f(1.48915,11.5223,129.147));
-//c->imageCoordinatesChessboardBuffer[0].push_back(Point2f(350,230));
-//c->worldCoordinatesChessboardBuffer[0].push_back(Point3f(-2.01754,25.7044,127.715));
-//c->imageCoordinatesChessboardBuffer[0].push_back(Point2f(230,260));
-//c->worldCoordinatesChessboardBuffer[0].push_back(Point3f(-9.56027,11.6547,130.63));
-//c->imageCoordinatesChessboardBuffer[0].push_back(Point2f(350,320));
-//c->worldCoordinatesChessboardBuffer[1].push_back(Point3f(-5.61583,12.9051,86.4141));
-//c->imageCoordinatesChessboardBuffer[1].push_back(Point2f(230,230));
-////reprojError1: 33.2399
-//c->worldCoordinatesChessboardBuffer[1].push_back(Point3f(-8.147,3.29142,88.2518));
-//c->imageCoordinatesChessboardBuffer[1].push_back(Point2f(350,260));
-////reprojError1: 1.40785
-//c->worldCoordinatesChessboardBuffer[1].push_back(Point3f(-12.7861,10.6147,86.9972));
-//c->imageCoordinatesChessboardBuffer[1].push_back(Point2f(260,320));
-////reprojError1: 1.23913
-//c->worldCoordinatesChessboardBuffer[1].push_back(Point3f(-5.73124,3.28911,88.19));
-//c->imageCoordinatesChessboardBuffer[1].push_back(Point2f(350,230));
-////reprojError1: 1.22112
-//c->worldCoordinatesChessboardBuffer[1].push_back(Point3f(-7.75082,12.9211,86.5215));
-//c->imageCoordinatesChessboardBuffer[1].push_back(Point2f(230,260));
-////reprojError1: 1.65666
-//c->worldCoordinatesChessboardBuffer[1].push_back(Point3f(-12.9733,3.29213,88.2709));
-//c->imageCoordinatesChessboardBuffer[1].push_back(Point2f(350,320));
-////reprojError1: 1.58698
-//c->worldCoordinatesChessboardBuffer[2].push_back(Point3f(9.2857,40.8968,176.794));
-//c->imageCoordinatesChessboardBuffer[2].push_back(Point2f(230,230));
-////reprojError2: 1.81301
-//c->worldCoordinatesChessboardBuffer[2].push_back(Point3f(4.06416,21.5819,180.936));
-//c->imageCoordinatesChessboardBuffer[2].push_back(Point2f(350,260));
-////reprojError2: 1.91594
-//c->worldCoordinatesChessboardBuffer[2].push_back(Point3f(-5.7311,36.3149,178.018));
-//c->imageCoordinatesChessboardBuffer[2].push_back(Point2f(260,320));
-////reprojError2: 1.98026
-//c->worldCoordinatesChessboardBuffer[2].push_back(Point3f(9.02385,21.6181,181.239));
-//c->imageCoordinatesChessboardBuffer[2].push_back(Point2f(350,230));
-////reprojError2: 1.97105
-//c->worldCoordinatesChessboardBuffer[2].push_back(Point3f(4.45667,40.9188,176.89));
-//c->imageCoordinatesChessboardBuffer[2].push_back(Point2f(230,260));
-////reprojError2: 1.92418
-//c->worldCoordinatesChessboardBuffer[2].push_back(Point3f(-6.33989,21.6516,181.52));
-//c->imageCoordinatesChessboardBuffer[2].push_back(Point2f(350,320));
-////reprojError2: 2.09446
-//c->worldCoordinatesChessboardBuffer[3].push_back(Point3f(-2.0554,20.8091,110.923));
-//c->imageCoordinatesChessboardBuffer[3].push_back(Point2f(230,230));
-////reprojError3: 2.58745
-//c->worldCoordinatesChessboardBuffer[3].push_back(Point3f(-4.88353,8.24644,113.241));
-//c->imageCoordinatesChessboardBuffer[3].push_back(Point2f(350,260));
-////reprojError3: 2.53914
-//c->worldCoordinatesChessboardBuffer[3].push_back(Point3f(-10.9804,17.6909,112.296));
-//c->imageCoordinatesChessboardBuffer[3].push_back(Point2f(260,320));
-////reprojError3: 2.49171
-//c->worldCoordinatesChessboardBuffer[3].push_back(Point3f(-2.09185,7.91236,112.89));
-//c->imageCoordinatesChessboardBuffer[3].push_back(Point2f(350,230));
-////reprojError3: 2.59167
-//c->worldCoordinatesChessboardBuffer[3].push_back(Point3f(-4.8123,20.6291,111.589));
-//c->imageCoordinatesChessboardBuffer[3].push_back(Point2f(230,260));
-////reprojError3: 2.60647
-//c->worldCoordinatesChessboardBuffer[3].push_back(Point3f(-11.0977,8.26499,113.496));
-//c->imageCoordinatesChessboardBuffer[3].push_back(Point2f(350,320));
-////reprojError3: 2.55827
-//c->worldCoordinatesChessboardBuffer[4].push_back(Point3f(5.26052,35.5803,157.534));
-//c->imageCoordinatesChessboardBuffer[4].push_back(Point2f(230,230));
-////reprojError4: 2.75705
-//c->worldCoordinatesChessboardBuffer[4].push_back(Point3f(0.974748,17.413,160.713));
-//c->imageCoordinatesChessboardBuffer[4].push_back(Point2f(350,260));
-////reprojError4: 2.75382
-//c->worldCoordinatesChessboardBuffer[4].push_back(Point3f(-7.75814,31.2617,159.663));
-//c->imageCoordinatesChessboardBuffer[4].push_back(Point2f(260,320));
-////reprojError4: 2.83346
-//c->worldCoordinatesChessboardBuffer[4].push_back(Point3f(5.33967,17.3253,159.904));
-//c->imageCoordinatesChessboardBuffer[4].push_back(Point2f(350,230));
-////reprojError4: 2.85609
-//c->worldCoordinatesChessboardBuffer[4].push_back(Point3f(1.81956,35.6408,157.801));
-//c->imageCoordinatesChessboardBuffer[4].push_back(Point2f(230,260));
-////reprojError4: 2.85811
-//c->worldCoordinatesChessboardBuffer[4].push_back(Point3f(-7.85125,16.6237,161.579));
-//c->imageCoordinatesChessboardBuffer[4].push_back(Point2f(350,320));
-////reprojError4: 3.06559
-
-
-}
-
-void fill2(Calibration *c)
-{
-  
-  c->x.push_back(-3.05079065266801e-06);
-  c->x.push_back(1.745764808531191e-06);
-
-  c->x.push_back(1.533876324860234e-05);
-  c->x.push_back(1.769400497144561e-07);
-
-  c->x.push_back(-3.700371994818713e-06);
-  c->x.push_back(2.117477055129764e-06);
-
-  c->x.push_back(1.860472789591281e-05);
-  c->x.push_back(2.146145308766468e-07);
-
-  c->x.push_back(0.002179859437507333);
-  c->x.push_back(-0.001247388738361842);
-
-  c->x.push_back(-0.01095989609301709);
-}
-
 #include "util.h"
-#include "opencv2/opencv.hpp"
+
+
+using namespace cv;
+
 int main(int argc, char *argv[])
 /// [main]
 {
@@ -150,17 +32,7 @@ int main(int argc, char *argv[])
   std::cout << "Major version : " << CV_MAJOR_VERSION << std::endl;
   std::cout << "Minor version : " << CV_MINOR_VERSION << std::endl;
   std::cout << "Subminor version : " << CV_SUBMINOR_VERSION << std::endl;
-  // std::cout << doSomething(5) <<"\n";
-  // createChessboard(6,4);
-  // doSomething(5);
-  // int a,b;
-  // std::cin>>a>>b;
-  // Calibration c;
-  // showMat(c.createChessboard(a,b,20));
-  // c.createChessboard(6,4,50);
   bool gpuView = false;
-
-  // showMat(frameToMat("rgb", NULL));
 
 SimpleViewer viewer; 
 viewer.setSize(480, 640);
@@ -178,17 +50,15 @@ if(argc>1)
     }
   }
 else {
-  std::cout<<"test(1) or calibration(2) or noCalib(3) or calibPoint(4) or noCalib2(5) or calib2(6)\n";
+  std::cout<<"test(1) or calibration(2) or noCalib(3)\n";
   std::cin >> tt;
 }
 gpuView = true;
-if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
+if (tt == 2 || tt == 3){
 /////////////////////Initialize Kinect /////////////////////
   int noCalib = 0;
   if(tt == 3) noCalib = 1;
-  if(tt == 4) noCalib = 2;
-  if(tt == 5) noCalib = 3;
-  if(tt == 6) noCalib = 4;
+
 
   libfreenect2::Freenect2 freenect2;
   libfreenect2::Freenect2Device *dev = 0;
@@ -224,7 +94,7 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
   Calibration c;
   c.setKinect(&listener);
   c.setProjectorResolution(480, 640); 
-  if(noCalib == 0 || noCalib == 4)
+  if(noCalib == 0)
     c.collectPoints(dev);
   
   std::cout<<"CALIBRATED\n";
@@ -239,24 +109,10 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
   {
     if(noCalib == 0)
       c.calibrate();
-    if(noCalib == 4)
-      c.calibrate2();
-    if(noCalib == 2){
-      fill(&c);
-      c.calibrate();
-    }
-    if(noCalib == 3){
-      fill2(&c);
-    }
-
-    // std::cout<<"trans"<<c.boardTranslations[0]<<"\n";
-    // std::cout<<"rot"<<c.boardRotations[0]<<"\n"; 
-    // std::cout<<c.cameraMatrix<<"\n"<<c.distCoeffs<<"\n";
 
     libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
     libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
     bool endin = false;
-    // namedWindow( "calibration2", WINDOW_AUTOSIZE );
     if(!gpuView){
       namedWindow("calibration2", CV_WINDOW_NORMAL);
       moveWindow("calibration2", 0, 0);
@@ -264,8 +120,6 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
     } else {
       viewer.initialize();
     }
-    // Mat board(600, 600, CV_8UC4, Scalar::all(255));
-    // imshow("calibration", board);
     bool initViewer = true;
     while(!endin)
     {
@@ -280,8 +134,7 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
         viewer.addFrame("RGB", &b);
         endin = endin || viewer.render();
       }
-      // std::cout<<board.size();
-      // waitKey(1000);
+
       (&listener)->waitForNewFrame(frames);
       libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
       libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
@@ -326,9 +179,8 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
       }
       // std::cout<<"RIGHT: "<<right<<" "<<up<<"\n";
       Mat mt, mr, cam, pro;
-      if(noCalib == 0 || noCalib >= 2)
-      {
-        if(noCalib == 0 || noCalib == 2){
+      if(noCalib == 0)
+      { 
           mt = c.boardTranslations[0];
           mr = c.boardRotations[0];
           cam = c.cameraMatrix;
@@ -337,9 +189,6 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
             std::cout<<mt<<"\n"<<mr<<"\n"<<cam<<"\n"<<pro<<"\n";
             print = false;
           }
-        }
-
-
       } else {
 /*
 [11.65937905975672;
@@ -378,17 +227,13 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
           up = 89;
           rotX = -4;
           /////////////////////////////
-      }
-        // std::cout<<"RIGHT: "<<right<<" UP: "<<up<<"\n";
+		}
       }
       std::vector<Point2f> projected;    
       std::vector<Point3f> src = (wrldSrc);    
       if(wrldSrc.size()>0){
         // projectPoints(src, mr, mt, c.cameraMatrix, c.distCoeffs, projected);  
-        if(noCalib <= 2)
           projectPoints(src, mr, mt, cam, pro, projected);
-        if(noCalib > 2)
-          projected = c.projectPoints2(src);
 		std::vector<Point2f> projectedOF;
         for (int i = 0; i < projected.size(); i++) {
           projectedOF.push_back(projected[i]);
@@ -457,15 +302,19 @@ if (tt == 2 || tt == 3 || tt == 4 || tt == 5 || tt == 6){
   dev->stop();
   dev->close();
 }
+
+
+////////////////////////////////////////////////////////TT 1 //////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
 if(tt == 1){
-
-
-// Calibration c;
-// c.setProjectorResolution(480, 640);
-// c.projectChessbooard(25,100,100);
-// int op = waitKey(5000);
-// std::cout<<op<<"\n";
-// if(op == 10) std::cout<<"en\n";
 
   int test = 0;
   PT ptest;
