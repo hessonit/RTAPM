@@ -8,41 +8,48 @@
 #include <libfreenect2/frame_listener_impl.h>
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
-// cv::Mat createChessboard(int columns, int rows);
 
+/// Calibration class
 class Calibration
 {
 public:
 	Calibration();
-	void readSettings(std::string path);
-	void saveSettings(std::string path);
+	void					 readSettings(std::string path);
+	void					 saveSettings(std::string path);
 
-	cv::Mat createChessboard(int cx, int cy, int blockSize);
-	bool detectChessboard(cv::Mat image, std::vector<cv::Point2f> output);
-	void setKinect(libfreenect2::SyncMultiFrameListener *listener);
-	// std::vector< std::pair<cv::Point2f, cv::Point3f> > collectPoints(libfreenect2::Freenect2Device *dev);
-	void collectPoints(libfreenect2::Freenect2Device *dev);
-	// cv::Mat calibrate(std::vector< std::pair<cv::Point2f, cv::Point3f> >pairs);
-	void calibrate();
-	void calibrate2();
-	std::pair<int,int> projectChessbooard(int blockSize=25, int x=-1, int y=-1);
-	void projectFindResult(bool flag);
-	void projectFindResult(bool flag, std::vector<cv::Point2f> points);
-	void setProjectorResolution(int rx, int ry);
-	std::vector<cv::Vec2f> project(std::vector<cv::Point3f> wrldSrc, int i);
+	cv::Mat					 createChessboard(int cx, int cy, int blockSize);
+	std::pair<int, int>		 projectChessbooard(int blockSize = 25, int x = -1, int y = -1);
+	bool					 detectChessboard(cv::Mat image, std::vector<cv::Point2f> output);
+	
+	void					 setKinect(libfreenect2::SyncMultiFrameListener *listener);
+	void					 collectPoints(libfreenect2::Freenect2Device *dev);
+	void					 calibrate();
+	void					 calibrate2();
+	
+	void					 projectFindResult(bool flag);
+	void					 projectFindResult(bool flag, std::vector<cv::Point2f> points);
+	
+	bool					 calibrationEnded();
+	void					 setProjectorResolution(int rx, int ry);
+	
+	std::vector<cv::Vec2f>	 project(std::vector<cv::Point3f> wrldSrc, int i);
 	std::vector<cv::Point2f> projectPoints2(std::vector<cv::Point3f> wrldSrc);
-// private:
-	bool calibrationEnd;
-	libfreenect2::SyncMultiFrameListener *_listener;
-	cv::Mat _chessBoard;
-	std::vector<cv::Point2f> internalPoints;
-	std::vector<std::vector <cv::Point3f>	>	worldCoordinatesChessboardBuffer;
-	std::vector<std::vector <cv::Point2f>	>	kinectCoordinatesChessboardBuffer;
-	std::vector<std::vector <cv::Point2f>	>	imageCoordinatesChessboardBuffer;
-	int projectorResolutionX, projectorResolutionY;
-	std::vector<cv::Mat>			boardRotations, boardTranslations;
-	cv::Mat cameraMatrix, distCoeffs;
+ 
+	int						 projectorResolutionX, projectorResolutionY;
+	std::vector<cv::Mat>	 boardRotations, boardTranslations;
+	cv::Mat					 cameraMatrix, distCoeffs;
+private:
+
+	bool									calibrationEnd;
+	libfreenect2::SyncMultiFrameListener*	_listener;
+	cv::Mat									_chessBoard;
+	std::vector<cv::Point2f>				internalPoints;
+	std::vector<std::vector <cv::Point3f> >	worldCoordinatesChessboardBuffer;
+	std::vector<std::vector <cv::Point2f> >	kinectCoordinatesChessboardBuffer;
+	std::vector<std::vector <cv::Point2f> >	imageCoordinatesChessboardBuffer;
+	
+	
 	std::vector<double> x;
-	// cv::Settings s; // ??? 
+	// cv::Settings s; // TODO read&save calibration
 
 };

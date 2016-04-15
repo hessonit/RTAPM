@@ -8,22 +8,22 @@ using namespace cv;
 
 class Intrinsics {
 	public:
-		void setup(Mat cameraMatrix, Size imageSize, Size sensorSize = Size(0, 0));
-		Mat getCameraMatrix() const;
-		Size getImageSize() const;
-		Size getSensorSize() const;
+		void	setup(Mat cameraMatrix, Size imageSize, Size sensorSize = Size(0, 0));
+		Mat		getCameraMatrix() const;
+		Size	getImageSize() const;
+		Size	getSensorSize() const;
 		Point2d getFov() const;
-		double getFocalLength() const;
-		double getAspectRatio() const;
+		double	getFocalLength() const;
+		double	getAspectRatio() const;
 		Point2d getPrincipalPoint() const;
         
          
 	protected:
-		Mat cameraMatrix;
-		Size imageSize; 
-        Size sensorSize;
+		Mat		cameraMatrix;
+		Size	imageSize; 
+        Size	sensorSize;
 		Point2d fov;
-		double focalLength, aspectRatio;
+		double	focalLength, aspectRatio;
 		Point2d principalPoint;
 	};
 

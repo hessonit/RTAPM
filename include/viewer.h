@@ -7,7 +7,6 @@
 #include <string>
 #include <map>
 
-// #include "flextGL.h"
 #include "flextGL.h"
 #include <GLFW/glfw3.h>
 
@@ -174,7 +173,7 @@ struct ShaderProgram : public WithOpenGLBindings
     void setFragmentShader(const std::string& src)
     {
         const char* src_ = src.c_str();
-        int length_ = src.length();
+        int length_ = static_cast<int>(src.length());
         fragment_shader = gl()->glCreateShader(GL_FRAGMENT_SHADER);
         gl()->glShaderSource(fragment_shader, 1, &src_, &length_);
     }
@@ -260,32 +259,6 @@ struct ShaderProgram : public WithOpenGLBindings
         gl()->glUseProgram(program);
     }
 };
-
-class Viewer : WithOpenGLBindings {
-private:
-    bool shouldStop;
-    GLFWwindow* window;
-    GLuint triangle_vbo, triangle_vao;
-    ShaderProgram renderShader;
-    ShaderProgram renderGrayShader;
-    std::string shader_folder;
-    std::map<std::string,libfreenect2::Frame*> frames;
-    Texture<F8C4> rgb;
-    Texture<F32C1> ir;
-    int win_height;
-    int win_width;
-public:
-    Viewer();
-    void initialize();
-    virtual void onOpenGLBindingsChanged(OpenGLBindings *b);
-    bool render();
-    void addFrame(std::string id,libfreenect2::Frame* frame);
-    void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-    void winsize_callback(GLFWwindow* window, int w, int h);
-    static void key_callbackstatic(GLFWwindow* window, int key, int scancode, int action, int mods);
-    static void winsize_callbackstatic(GLFWwindow* window, int w, int h);
-};
-
 
 class SimpleViewer : WithOpenGLBindings {
 private:

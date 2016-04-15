@@ -13,6 +13,7 @@ Calibration::Calibration()
 	calibrationEnd = false;
 }
 
+// TODO read&save calibration settings
 void Calibration::readSettings(std::string path)
 {
 }
@@ -47,7 +48,6 @@ Mat Calibration::createChessboard(int cx, int cy, int blockSize)
      	for(int j=1;j<size1;j++)
      	{
      		internalPoints.push_back(Point2f(cx+(blockSize*(j)),cy+(blockSize*(i))));
-     		// cout<<cx+(blockSize*(j+1))<<" "<<cy+(blockSize*(i+1))<<"\n";
      	}
      }
 
@@ -55,6 +55,10 @@ Mat Calibration::createChessboard(int cx, int cy, int blockSize)
 	return chessBoard;
 }
 
+bool Calibration::calibrationEnded()
+{
+	return calibrationEnd;
+}
 bool Calibration::detectChessboard(Mat image, vector<Point2f> output)
 {
 	Size patternsize(5,4);
@@ -86,10 +90,11 @@ pair<int,int> Calibration::projectChessbooard(int blockSize, int x, int y)
 		x = 0;
 		y = 0;
 	}
-	namedWindow("calibration", CV_WINDOW_NORMAL);
-	moveWindow("calibration", 0, 0);
-	setWindowProperty("calibration", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-// cvNamedWindow("Name", CV_WINDOW_NORMAL);
+	//namedWindow("calibration", CV_WINDOW_NORMAL);
+	//moveWindow("calibration", 0, 0);
+	//setWindowProperty("calibration", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+
+	// cvNamedWindow("Name", CV_WINDOW_NORMAL);
     // cvSetWindowProperty("Name", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 	_chessBoard = createChessboard(x,y,blockSize);
 	imshow("calibration", _chessBoard);
@@ -131,6 +136,8 @@ void Calibration::collectPoints(libfreenect2::Freenect2Device *dev)
   	int numberOfIterations = 5;
   	// pair<int,int> tab[8] = {{200,200},{200,100},{100,100},{100,200},{200,200},{200,100},{100,100},{100,200}};
 	pair<int,int> tab[10] = {{200,200},{200,200},{200,200},{200,200},{200,200},{100,100},{100,100},{100,100},{100,100},{100,100}};
+	namedWindow("calibration", CV_WINDOW_NORMAL);
+	moveWindow("calibration", 0, 0);
 	while(!calibrationEnd)
 	{
 		pair<int,int> projEntryPoint = projectChessbooard(blockSize, 200, 200);
@@ -145,7 +152,7 @@ void Calibration::collectPoints(libfreenect2::Freenect2Device *dev)
         libfreenect2::Frame bigdepth(1920, 1082, 4);
     	registration->apply(rgb, depth, &undistorted, &registered, true, &bigdepth, NULL);
     	Mat depthMap = frameToMat("map", &bigdepth);
-        Mat rgbImage =  frameToMat("registered", &registered); // frameToMat("rgb", rgb);
+        Mat rgbImage =  frameToMat("registered", &registered);
         Mat grayImage;
         cvtColor(rgbImage, grayImage, CV_BGR2GRAY);
         waitKey(3000); // wait before looking for chessboard
@@ -204,8 +211,8 @@ void Calibration::collectPoints(libfreenect2::Freenect2Device *dev)
 
         _listener->release(frames);
 		int op = waitKey(1000);
-    	cout<<op<<"\n";
-    	if(op == 1113997) break; // right enter
+    	//cout<<op<<"\n";
+    	if(op == 1113997 || (char)op == '\n') break; // right enter
 
 	}
 	 destroyWindow("calibration");
@@ -213,6 +220,7 @@ void Calibration::collectPoints(libfreenect2::Freenect2Device *dev)
 	 // return result;
 }
 
+// my own calibration
 void Calibration::calibrate2()
 {
 
@@ -274,19 +282,13 @@ void Calibration::calibrate(){
 	cout << "Calibration START\n";
 	vector<vector<Point3f> > vvo(1); //object points
 	vector<vector<Point2f> > vvi(1); //image points
-	// cout<<"c->worldCoordinatesChessboardBuffer.resize("<<worldCoordinatesChessboardBuffer.size()<<");\n";
-	// cout<<"c->imageCoordinatesChessboardBuffer.resize("<<imageCoordinatesChessboardBuffer.size()<<");\n";
 	float reprojError;
 	for (int i=0; i<worldCoordinatesChessboardBuffer.size(); ++i) {
 		for (int j = 0; j<worldCoordinatesChessboardBuffer[i].size(); j++) {
 			vvo[0].push_back(worldCoordinatesChessboardBuffer[i][j]);
 			vvi[0].push_back(imageCoordinatesChessboardBuffer[i][j]);
-			// cout<<"c->worldCoordinatesChessboardBuffer["<<i<<"].push_back(Point3f("<<worldCoordinatesChessboardBuffer[i][j].x<<","
-				// <<worldCoordinatesChessboardBuffer[i][j].y<<","<<worldCoordinatesChessboardBuffer[i][j].z<<"));\n";
-
-			// cout<<"c->imageCoordinatesChessboardBuffer["<<i<<"].push_back(Point2f("<<imageCoordinatesChessboardBuffer[i][j].x<<","
-				// <<imageCoordinatesChessboardBuffer[i][j].y<<"));\n";
 			/*
+			// this code is only to check how reprojection error changes depending on number of inputted points
 			if(i>0){
 				Mat cameraMatrix1 = (Mat1d(3, 3) << 	projectorResolutionX, 0, projectorResolutionX / 2.,
 					                0, projectorResolutionY, projectorResolutionY / 2.,
@@ -324,6 +326,7 @@ void Calibration::calibrate(){
 	}
 }
 
+//in case calibration2 to work...
 vector<Point2f> Calibration::projectPoints2(vector<Point3f> wrldSrc)
 {
 	vector<Point2f> result;
@@ -332,7 +335,6 @@ vector<Point2f> Calibration::projectPoints2(vector<Point3f> wrldSrc)
 		double b = x[4]*wrldSrc[i].x + x[5]*wrldSrc[i].y + x[6]*wrldSrc[i].z + x[7];
 		double c = x[8]*wrldSrc[i].x + x[9]*wrldSrc[i].y + x[10]*wrldSrc[i].z + 1;
 		result.push_back(Point2f(a/c, b/c));
-
 	}
 
     return result;
