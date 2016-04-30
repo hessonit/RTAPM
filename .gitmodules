@@ -10,3 +10,6 @@
 [submodule "libs/libjpeg-turbo"]
 	path = libs/libjpeg-turbo
 	url = git@github.com:libjpeg-turbo/libjpeg-turbo.git
+[submodule "libs/VTK"]
+	path = libs/VTK
+	url = https://github.com/Kitware/VTK
