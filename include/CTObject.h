@@ -5,6 +5,9 @@
 #include <iostream>
 
 using namespace std;
+
+enum SIDE{FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM};
+
 class CTObject
 {
 public:
@@ -12,10 +15,13 @@ public:
 	~CTObject();
 	void readData();
 	void showData();
+	char at(int x, int y, int z);
 	int getWidth () { return xSize; }
 	int getHeight() { return ySize; }
 	int getDepth () { return zSize; }
+	void setView(SIDE newView) { view = newView; }
 private:
+	SIDE view;
 	char **data;
 	string path;
 	const int xSize, ySize, zSize;
@@ -26,6 +32,7 @@ inline CTObject::CTObject(string _path, int _xSize, int _ySize, int _zSize) : xS
 {
 	path = _path;
 	data = new char*[_zSize];
+	view = SIDE::FRONT;
 }
 
 inline CTObject::~CTObject()

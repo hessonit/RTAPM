@@ -547,6 +547,7 @@ if(tt == 1){
   }
   if (test == 6)
   {
+	  SIDE view = SIDE::FRONT;
 	  std::string pathBunny = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
 	  std::string pathBrain = "C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.";
 	  CTObject obj(pathBunny, 512, 512, 360);

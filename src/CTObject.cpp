@@ -66,10 +66,35 @@ void CTObject::showData()
 	cv::moveWindow("showData", 0, 0);
 	for (int i = 0; i < zSize; i++)
 	{
-		cv::Mat bunny = cv::Mat(xSize, ySize, CV_8UC1, data[i]);
+		cv::Mat image = cv::Mat(xSize, ySize, CV_8UC1, data[i]);
 		//setWindowProperty("showData", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-		cv::imshow("showData", bunny);
+		cv::imshow("showData", image);
 		int op = cv::waitKey(50);
+	}
+}
+
+char CTObject::at(int x, int y, int z)
+{
+	//_ASSERT(xSize > x && ySize > y && zSize > z);
+	switch (view)
+	{
+	case FRONT:
+		return data[z][y*ySize + x];
+		break;
+	case BACK:
+		return data[zSize - z][y*ySize + x];
+		break;
+	case LEFT:
+		break;
+	case RIGHT:
+		break;
+	case TOP:
+		break;
+	case BOTTOM:
+		break;
+	default:
+		return 0;
+		break;
 	}
 }
 
