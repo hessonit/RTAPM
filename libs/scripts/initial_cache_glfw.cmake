@@ -1,0 +1,6 @@
+include( ${CMAKE_CURRENT_LIST_DIR}"/initial_compiler_flags_common.cmake" )
+set(CMAKE_INSTALL_PREFIX ${CMAKE_CURRENT_LIST_DIR}/../install/vc140/glfw CACHE PATH "")
+
+set(BUILD_SHARED_LIBS 1 CACHE BOOL "")
+set(BUILD_TESTING 0 CACHE BOOL "")
+set(CMAKE_CXX_MP_FLAG 1 CACHE BOOL "")
