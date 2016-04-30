@@ -1,6 +1,14 @@
 build/
 libs/install
 
+libs/VTK_temp/
+libs/eigen/
+libs/flann/
+libs/libfreenect2pclgrabber/
+libs/opencv_contrib/
+libs/pcl/
+
+.gitignore
 # Windows image file caches
 Thumbs.db
 ehthumbs.db
