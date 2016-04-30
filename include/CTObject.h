@@ -1,6 +1,6 @@
 #include <fstream>
-#include <cstring> // for std::strlen
-#include <cstddef> // for std::size_t -> is a typedef on an unsinged int
+#include <cstring>  
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 
@@ -11,6 +11,10 @@ public:
 	CTObject(string _path, int _xSize, int _ySize, int _zSize);
 	~CTObject();
 	void readData();
+	void showData();
+	int getWidth () { return xSize; }
+	int getHeight() { return ySize; }
+	int getDepth () { return zSize; }
 private:
 	char **data;
 	string path;
@@ -24,10 +28,12 @@ inline CTObject::CTObject(string _path, int _xSize, int _ySize, int _zSize) : xS
 	data = new char*[_zSize];
 }
 
-CTObject::~CTObject()
+inline CTObject::~CTObject()
 {
-	for (int i = 0; i < zSize; ++i) {
-		delete[] data[i];
+	if (data != NULL) {
+		for (int i = 0; i < zSize; ++i) {
+			delete[] data[i];
+		}
+		delete[] data;
 	}
-	delete[] data;
 }

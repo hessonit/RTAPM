@@ -23,6 +23,7 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include "viewer.h"
 #include "VideoFaceDetector.h"
+#include "CTObject.h"
 
 #include "util.h"
 
@@ -544,91 +545,14 @@ if(tt == 1){
 	  dev->stop();
 	  dev->close();
   }
-  if (test == 6) {
-	  std::string path = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
-	  std::string pathB = "C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.";
-	  std::ifstream inFile;
-	  size_t size = 0; // here
-	  namedWindow("FaceTrack", CV_WINDOW_NORMAL);
-	  moveWindow("FaceTrack", 0, 0);
-
-	  for (int j = 1; j < 360; j++) {
-		  int ind = j;
-
-		  inFile.open(path + intToStr(ind), std::ios::in | std::ios::binary | std::ios::ate);
-		  char* oData = 0;
-		  char* image = 0;
-		  inFile.seekg(0, std::ios::end); // set the pointer to the end
-		  size = inFile.tellg(); // get the length of the file
-		  std::cout << "Size of file: " << size;
-		  inFile.seekg(0, std::ios::beg); // set the pointer to the beginning
-
-		  oData = new char[size + 1]; //  for the '\0'
-		  image = new char[size / 2];
-		  inFile.read(oData, size);
-		  int mini = 0;//  9999999; // 0 65535
-		  int maxi = 63536;//  0;
-		  int mini2 = 9999999; // 0 65535
-		  int maxi2 = 0;
-		  /*for (int i = 0; i < size; i += 2) {
-			  short c = (((short)oData[i]) << 8) | oData[i+1];
-			  if (c < mini2) mini2 = c;
-			  if (c > maxi2) maxi2 = c;
-		  }
-		  std::cout << "\nmini: " << mini2 << " maxi: " << maxi2 << "\n";
-		  */mini = -2000;
-		  maxi = 2531 + 2000;
-		  for (int i = 0; i < size; i += 2) {
-			  short c = (((short)oData[i]) << 8) | oData[i+1];
-			  float temp = (float)c;
-			  temp = ((temp - mini) / ((float)maxi)) * 255;
-			  //if (temp > 40) temp = 200;
-			  image[i / 2] = (char)temp;
-			   /*char value = 0;
-			   if (c > -700) value += 31;
-			   if (c > -300) value += 31;
-			   if (c > -100) value += 31;
-			   if (c > 0) value += 31;
-			   if (c > 15) value += 31;
-			   if (c > 30) value += 31;
-			   if (c > 45) value += 31;
-			   if (c > 700) value += 31;
-			   if (c > 1000) value += 31;
-			   image[i / 2] = value;*/
-
-
-
-		  }
-		  oData[size] = '\0'; // set '\0' 
-		  std::cout << " oData size: " << strlen(oData) << "\n";
-		  int a;
-
-		  std::cout << mini << " " << maxi << "\n";
-		  //std::cin >> a;
-
-		  Mat bunny = Mat(512, 512, CV_8UC1, image);
-
-		  //setWindowProperty("FaceTrack", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-		  imshow("FaceTrack", bunny);
-		  int op = waitKey(50);
-		  inFile.close();
-		  delete[] oData;
-		  delete[] image;
-
-	  }
-	  //print data
-	  //for (size_t i = 0; i < strlen(oData); i++)
-	/*  for (size_t i = 0; i < 10; i++)
-	  {
-		  std::cout << "oData[" << i << "] " << oData[i];
-		  std::cout << "\n";
-		  std::cout << oData[i] << " = " << (unsigned char)(oData[i]);
-		  std::cout << "\n\n";
-
-	  }*/
-	  int h;
-	  std::cin >> h;
-	  destroyWindow("FaceTrack");
+  if (test == 6)
+  {
+	  std::string pathBunny = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
+	  std::string pathBrain = "C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.";
+	  CTObject obj(pathBunny, 512, 512, 360);
+	  //CTObject obj(pathBrain, 256, 256, 106);
+	  obj.readData();
+	  obj.showData();
   }
 
 
