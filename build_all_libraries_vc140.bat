@@ -13,3 +13,4 @@ start /WAIT build_glfw_vc140.bat ^&^& exit
 start /WAIT build_libjpeg-turbo_vc140.bat ^&^& exit
 start /WAIT build_libfreenect2_vc140.bat ^&^& exit
 start /WAIT build_opencv_vc140.bat ^&^& exit
+start /WAIT build_vtk_vc140.bat ^&^& exit

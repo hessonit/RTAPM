@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 project(Niksa)
 
-#set(VTK_DIR "${PROJECT_SOURCE_DIR}/libs/install/VTK/lib/cmake/vtk-6.3/")
 
-#find_package(VTK REQUIRED)
-#include(${VTK_USE_FILE})
 
 #set(PCL_DIR "${PROJECT_SOURCE_DIR}/libs/install/PCL/cmake/")
 
@@ -42,13 +39,18 @@ link_directories(${GLFW3_LIBRARY})
 set(libusb_LIBRARY "${PROJECT_SOURCE_DIR}/libs/libfreenect2/depends/libusb/MS64/dll/libusb-usbdk-1.0.lib")
 link_directories(${libusb_LIBRARY})
 
+
+set(VTK_DIR "${PROJECT_SOURCE_DIR}/libs/install/vc140/VTK/lib/cmake/vtk-6.3")
+find_package(VTK REQUIRED)
+include(${VTK_USE_FILE})
+# set(GLFW3_DLL "${PROJECT_SOURCE_DIR}/libs/install/vc140/glfw/lib/glfw3.dll")
 #include_directories("${PROJECT_SOURCE_DIR}/libs/libfreenect2pclgrabber")
 
 set(common_libraries 
 	${OpenCV_LIBRARIES}
 #	${PCL_LIBRARIES} 
 	${freenect2_LIBRARIES} 
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 #	${libjpegturbo_LIBRARIES} 
 	${GLFW3_LIBRARY} 
 	${libusb_LIBRARY}
@@ -56,8 +58,8 @@ set(common_libraries
 	)
 
 
-add_executable(capture_depth_frames src/capture_depth_frames.cpp)
-target_link_libraries(capture_depth_frames ${common_libraries})
+#add_executable(capture_depth_frames src/capture_depth_frames.cpp)
+#target_link_libraries(capture_depth_frames ${common_libraries})
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 add_executable(Niksa
@@ -74,8 +76,10 @@ add_executable(Niksa
 	src/calibration.cpp
 	include/VideoFaceDetector.h
 	src/VideoFaceDetector.cpp
-  include/intrinsics.h
-  src/intrinsics.cpp
+    include/intrinsics.h
+    src/intrinsics.cpp
+    include/CTObject.h
+	src/CTObject.cpp
   
 	src/Niksa.cpp
 	)
@@ -83,17 +87,27 @@ target_link_libraries(Niksa ${common_libraries})
 #add_executable(kinfu_preview src/kinfu_preview.cpp)
 #target_link_libraries(kinfu_preview ${common_libraries})
 
-add_custom_command(TARGET capture_depth_frames POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${PROJECT_SOURCE_DIR}/libs/libfreenect2/depends/libusb/MS64/dll/libusb-usbdk-1.0.dll"
-        $<TARGET_FILE_DIR:capture_depth_frames>/libusb-1.0.dll)
+# add_custom_command(TARGET Niksa POST_BUILD
+    # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        # "${PROJECT_SOURCE_DIR}/libs/install/vc140/VTK/bin/vtkRenderingOpenGL-6.3.dll"
+        # $<TARGET_FILE_DIR:Niksa>)
 
-add_custom_command(TARGET capture_depth_frames POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${freenect2_DLL}
-        $<TARGET_FILE_DIR:capture_depth_frames>)
+add_custom_command(TARGET Niksa POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/libs/install/vc140/VTK/bin/"
+        $<TARGET_FILE_DIR:Niksa>)
 
-add_custom_command(TARGET capture_depth_frames POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${GLFW3_DLL}
-        $<TARGET_FILE_DIR:capture_depth_frames>)
+# add_custom_command(TARGET capture_depth_frames POST_BUILD
+    # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        # "${PROJECT_SOURCE_DIR}/libs/libfreenect2/depends/libusb/MS64/dll/libusb-usbdk-1.0.dll"
+        # $<TARGET_FILE_DIR:capture_depth_frames>/libusb-1.0.dll)
+
+# add_custom_command(TARGET capture_depth_frames POST_BUILD
+    # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        # ${freenect2_DLL}
+        # $<TARGET_FILE_DIR:capture_depth_frames>)
+
+# add_custom_command(TARGET capture_depth_frames POST_BUILD
+    # COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        # ${GLFW3_DLL}
+        # $<TARGET_FILE_DIR:capture_depth_frames>)

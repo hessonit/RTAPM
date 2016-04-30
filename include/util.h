@@ -18,6 +18,8 @@ int doSomething(int s);
 
 void showMat(cv::Mat image);
 
+std::string intToStr(int n);
+
 cv::Mat frameToMat(std::string type, libfreenect2::Frame *frame);
 
 
