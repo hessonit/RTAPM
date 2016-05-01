@@ -494,6 +494,14 @@ if(tt == 1){
 	  bool shutdown = false;
 	  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
 	  libfreenect2::FrameMap frames;
+	  
+	  cout << "LOADING CT SCAN\n";
+	  std::string pathBunny = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
+	  std::string pathBrain = "C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.";
+	  CTObject ctObject(pathBunny, 512, 512, 360);
+	  //CTObject ctObject(pathBrain, 256, 256, 106);
+	  ctObject.readData();
+	  cout << "CT SCAN LOADED\n";
 	  dev->setColorFrameListener(&listener);
 	  dev->setIrAndDepthFrameListener(&listener);
 	  dev->start();
@@ -502,17 +510,12 @@ if(tt == 1){
 	  libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
 
 
-	  libfreenect2::Frame bigdepth(1920, 1082, 4); // for registration ?
 
-	  namedWindow("FaceTrack", CV_WINDOW_NORMAL);
-	  moveWindow("FaceTrack", 0, 0);
-	  setWindowProperty("FaceTrack", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+	  //libfreenect2::Frame bigdepth(1920, 1082, 4); // for registration ?
 
-	  bool tracking = false;
-	  Rect roi_b;
-	  int maxCorners = 100;
-	  std::vector<Point2f> cornersA;
-	  cornersA.reserve(maxCorners);
+	  namedWindow("CTviewer", CV_WINDOW_NORMAL);
+	  moveWindow("CTviewer", 0, 0);
+	  //setWindowProperty("CTviewer", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 	 
 	  while (!shutdown)
 	  {
@@ -524,21 +527,75 @@ if(tt == 1){
 		  registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
 
 		  Mat frame = frameToMat("registered", &registered);
-
+		  Mat depthFrame = frameToMat("depth", depth);
+		  Mat board(424, 512, CV_8UC4, Scalar::all(255));
+		  int centerX = 512 / 2;
+		  int centerY = 242 / 2;
+		  depthFrame *= 0.001;
 		  ///////////////////////////STUFF BEG///////////////////////////////////////////////////////////
+		  for (int i = 0; i < 512; i++)
+		  {
+			  for (int j = 0; j < 424; j++)
+			  {
+				  float x = 0, y = 0, z = 0, color = 0;
+				  registration->getPointXYZRGB(&undistorted, &registered,
+					  j, i,
+					  x, y, z, color);
+				  z = depthFrame.at<float>(j, i);
 
+				  //square
+				  // x y z points -> projector points
+				  if (z >= 0.5 && z <= 1.0 && x >= -0.2 && x <= 0.2 && y >= -0.2 && y <= 0.2) {
+
+					  int xVal = (x + 0.2)*(512.0 / 0.4);
+					  int yVal = (y + 0.2)*(512.0 / 0.4);
+					  int zVal = (z - 0.5)*(359.0 / 0.5);
+					  Mat ROI = board(Rect(i, j, 1, 1));
+					  char value = ctObject.at(xVal, yVal, zVal);
+					  ROI.setTo(Scalar(value, value, value, 100));
+					  /*int windowX, windowY;
+					  windowX = 512;
+					  windowY = 424;
+					  float jumpX = windowX / (float)ctObject.getWidth();
+					  float jumpY = windowY / (float)ctObject.getHeight();
+					  jumpX = (jumpX > 1) ? 1.0 : jumpX;
+					  jumpY = (jumpY > 1) ? 1.0 : jumpY;
+					  int zeroX = centerX - windowX / 2;
+					  int zeroY = centerY - windowY / 2;
+					  */
+					  //cout<<i<<" "<<j<<" | " << x << " " << y << " " << z << endl;
+					  /*const uint8_t *p = reinterpret_cast<uint8_t*>(&color);
+					  uint8_t b = p[0];
+					  uint8_t g = p[1];
+					  uint8_t r = p[2];
+					   Mat ROI = board(Rect(i, j, 1, 1));
+					   ROI.setTo(Scalar(b, g, r, 100));*/
+
+				  }
+
+				  //// ball
+				  //x = (float)i / 512.0;
+				  //y = (float)j / 424.0;
+				  //double res = (x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) + (z - 1)*(z - 1);
+				  //if (res < 0.015) {
+					 // Mat ROI = board(Rect(i, j, 1, 1));
+					 // ROI.setTo(Scalar(100, 100, 150, 100));
+				  //}
+				  
+			  }
+		  }
 
 
 		  ///////////////////////////STUFF END///////////////////////////////////////////////////////////
 
-		  imshow("FaceTrack", frame);
+		  imshow("CTviewer", board);
 
 
 		  int op = waitKey(1);
 		  if (op == 1113997 || op == 1048586 || op == 1048608 || op == 10 || op == 32)
 		  {
 			  shutdown = true;
-			  destroyWindow("FaceTrack");
+			  destroyWindow("CTviewer");
 		  }
 		  listener.release(frames);
 	  }
@@ -595,11 +652,6 @@ if(tt == 1){
 //	moveWindow("FaceTrack", 0, 0);
 //	setWindowProperty("FaceTrack", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 //
-//	bool tracking = false;
-//	Rect roi_b;
-//	int maxCorners = 100;
-//	std::vector<Point2f> cornersA;
-//	cornersA.reserve(maxCorners);
 //
 //	while (!shutdown)
 //	{
