@@ -73,24 +73,29 @@ void CTObject::showData()
 	}
 }
 
+// TO-DO check if everything works
 char CTObject::at(int x, int y, int z)
 {
 	//_ASSERT(xSize > x && ySize > y && zSize > z);
 	switch (view)
 	{
 	case FRONT:
-		return data[z][y*ySize + x];
+		return data[z][y*xSize + x];
 		break;
 	case BACK:
-		return data[zSize - z][y*ySize + x];
+		return data[zSize - z - 1][y*ySize + x];
 		break;
 	case LEFT:
+		return data[zSize - x - 1][y*xSize + z];
 		break;
 	case RIGHT:
+		return data[x][y*xSize + (xSize - z)];
 		break;
 	case TOP:
+		return data[zSize - y - 1][z*xSize + x];
 		break;
 	case BOTTOM:
+		return data[y][(ySize - z)*ySize + x];
 		break;
 	default:
 		return 0;

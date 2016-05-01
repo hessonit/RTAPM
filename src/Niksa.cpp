@@ -611,6 +611,7 @@ if(tt == 1){
 	  //CTObject obj(pathBrain, 256, 256, 106);
 	  obj.readData();
 	  obj.showData();
+	  //obj.showData(view);
   }
 
 
