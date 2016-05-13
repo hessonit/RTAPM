@@ -385,53 +385,9 @@ int vtkTest()
 }
 
 
-
-
-// Test pcl model (Test1)
 void PT::test1()
 {
 	vtkTest();
-  //// std::cout<<"DO THE JOB\n";
-  //processor freenectprocessor = OPENGL;
-  //std::vector<int> ply_file_indices;
-  //freenectprocessor = static_cast<processor>(2);
-
-
-  //boost::shared_ptr<pcl::PointCloud<pcl::PointXYZRGB>> cloud;
-  //K2G k2g(freenectprocessor);
-  //std::cout << "getting cloud" << std::endl;
-  //cloud = k2g.getCloud();
-
-  //cloud->sensor_orientation_.w() = 0.0;
-  //cloud->sensor_orientation_.x() = 1.0;
-  //cloud->sensor_orientation_.y() = 0.0;
-  //cloud->sensor_orientation_.z() = 0.0;
-
-  //boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer(new pcl::visualization::PCLVisualizer ("3D Viewer"));
-  //viewer->setBackgroundColor (0, 0, 0);
-  //pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
-  //viewer->addPointCloud<pcl::PointXYZRGB>(cloud, rgb, "sample cloud");
-  //viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "sample cloud");
-
-  //PlySaver ps(cloud, false, false);
-  //viewer->registerKeyboardCallback(KeyboardEventOccurred, (void*)&ps);
-
-  //bool done = false;
-  //while((!viewer->wasStopped()) && (!done)){
-
-  //  viewer->spinOnce ();
-  //  std::chrono::high_resolution_clock::time_point tnow = std::chrono::high_resolution_clock::now();
-
-  //  cloud = k2g.updateCloud(cloud);
-
-  //  std::chrono::high_resolution_clock::time_point tpost = std::chrono::high_resolution_clock::now();
-  //  std::cout << "delta " << std::chrono::duration_cast<std::chrono::duration<double>>(tpost-tnow).count() * 1000 << std::endl;
-  //  pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> rgb(cloud);
-  //  viewer->updatePointCloud<pcl::PointXYZRGB> (cloud, rgb, "sample cloud");      
-
-  //}
-
-  //k2g.shutDown();
 }
 
 

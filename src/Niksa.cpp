@@ -309,7 +309,7 @@ if(tt == 1){
 
   int test = 0;
   PT ptest;
-  std::cout<<"VTKTEST(1) or LIBFREENECT2(2) or PlaneScan(3) or FaceTrackFast(4)\n";
+  std::cout<<"VTKTEST(1) or LIBFREENECT2(2) or PlaneScan(3) or FaceTrackFast(4) or CT Viewer(5) or CT data viewer(6)\n";
   std::cin >> test;
   if(test == 1)
     ptest.test1(); 
@@ -604,14 +604,15 @@ if(tt == 1){
   }
   if (test == 6)
   {
-	  SIDE view = SIDE::FRONT;
+	  SIDE view = SIDE::LEFT;
 	  std::string pathBunny = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
 	  std::string pathBrain = "C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.";
 	  CTObject obj(pathBunny, 512, 512, 360);
 	  //CTObject obj(pathBrain, 256, 256, 106);
+	  obj.setView(view);
 	  obj.readData();
-	  obj.showData();
-	  //obj.showData(view);
+	  //obj.showData();
+	  obj.showDataFromView();
   }
 
 

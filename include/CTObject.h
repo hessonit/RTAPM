@@ -15,12 +15,14 @@ public:
 	~CTObject();
 	void readData();
 	void showData();
+	void showDataFromView();
 	char at(int x, int y, int z);
 	int getWidth () { return xSize; }
 	int getHeight() { return ySize; }
 	int getDepth () { return zSize; }
 	void setView(SIDE newView) { view = newView; }
 private:
+	void getCorrectDimensions(int* x, int* y, int*z);
 	SIDE view;
 	char **data;
 	string path;

@@ -10,9 +10,11 @@
 void CTObject::readData()
 {
 	_ASSERT(xSize > 0 && ySize > 0 && zSize > 0);
+	std::cout << "Reading data\n";
 	ifstream inFile;
 	size_t size = 0;
 	for (int j = 1; j <= zSize; j++) {
+		std::cout << j << "/" << zSize;
 		int ind = j;
 
 		inFile.open(path + intToStr(ind), ios::in | ios::binary | ios::ate);
@@ -57,6 +59,7 @@ void CTObject::readData()
 		}
 		inFile.close();
 		delete[] oData;
+		std::cout << '\r';
 	}
 }
 
@@ -68,6 +71,59 @@ void CTObject::showData()
 	{
 		cv::Mat image = cv::Mat(xSize, ySize, CV_8UC1, data[i]);
 		//setWindowProperty("showData", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+		cv::imshow("showData", image);
+		int op = cv::waitKey(50);
+	}
+}
+void CTObject::getCorrectDimensions(int* x, int* y, int*z) 
+{
+	switch (view)
+	{
+		case FRONT:
+			*x = xSize; *y = ySize; *z = zSize;
+			break;
+		case BACK:
+			*x = xSize; *y = ySize; *z = zSize;
+			break;
+		case LEFT:
+			*x = zSize; *y = ySize; *z = xSize;
+			break;
+		case RIGHT:
+			*x = zSize; *y = ySize; *z = xSize;
+			break;
+		case TOP:
+			*x = xSize; *y = zSize; *z = ySize;
+			break;
+		case BOTTOM:
+			*x = xSize; *y = zSize; *z = ySize;
+			break;
+		default:
+			*x = xSize; *y = ySize; *z = zSize;
+			break;
+	}
+}
+//Mat ROI = board(Rect(i, j, 1, 1));
+//char value = ctObject.at(xVal, yVal, zVal);
+//ROI.setTo(Scalar(value, value, value, 100));
+void CTObject::showDataFromView()
+{
+	cv::namedWindow("showData", CV_WINDOW_NORMAL);
+	cv::moveWindow("showData", 0, 0);
+	int x, y, z;
+	getCorrectDimensions(&x, &y, &z);
+	for (int i = 0; i < z; i++)
+	{
+		cv::Mat image = cv::Mat(y, x, CV_8UC1, cv::Scalar(0));
+		//setWindowProperty("showData", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+		for (int xx = 0; xx < x; xx++)
+		{
+			for (int yy = 0; yy < y; yy++)
+			{
+				cv::Mat ROI = image(cv::Rect(xx, yy, 1, 1));
+				char value = at(xx, yy, i);
+				ROI.setTo(value);
+			}
+		}
 		cv::imshow("showData", image);
 		int op = cv::waitKey(50);
 	}
@@ -86,10 +142,10 @@ char CTObject::at(int x, int y, int z)
 		return data[zSize - z - 1][y*ySize + x];
 		break;
 	case LEFT:
-		return data[zSize - x - 1][y*xSize + z];
+		return data[zSize - x - 1][y*ySize + z];
 		break;
 	case RIGHT:
-		return data[x][y*xSize + (xSize - z)];
+		return data[x][y*ySize + (xSize - z - 1)];
 		break;
 	case TOP:
 		return data[zSize - y - 1][z*xSize + x];
