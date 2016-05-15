@@ -302,7 +302,22 @@ if(tt == 1){
     ptest.test2(argc, argv);
   if(test == 3)
   {
-	  // INIT KINECT
+	  int gpuView = 0;
+	  std::cout << "CPU view(0) or GPU view(1)\n";
+	  std::cin >> gpuView;
+	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
+		  17.7872756163266,
+		  -6.798784049003872);
+
+	  cv::Mat mr = (cv::Mat1f(3, 1) << 2.178677563707194,
+		  2.096964130591053,
+		  0.1258202253438768);
+
+	  cv::Mat cam = (cv::Mat_<double>(3, 3) << 1053.314135376467, 0, 670.864138058805,
+		  0, 1059.961617203515, 291.5273582648912,
+		  0, 0, 1);
+
+	  cv::Mat pro = (cv::Mat1f(5, 1) << 0, 0, 0, 0, 0);
 	  libfreenect2::Freenect2 freenect2;
 	  libfreenect2::Freenect2Device *dev = 0;
 	  libfreenect2::PacketPipeline *pipeline = 0;
@@ -315,79 +330,14 @@ if(tt == 1){
 	  if (!pipeline)
 		  pipeline = new libfreenect2::OpenGLPacketPipeline();
 	  dev = freenect2.openDevice(serial, pipeline);
-	  // signal(SIGINT,sigint_handler);
-	  bool shutdown = false;
 	  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-	  libfreenect2::FrameMap frames;
 	  dev->setColorFrameListener(&listener);
 	  dev->setIrAndDepthFrameListener(&listener);
 	  dev->start();
-
-	  libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
-	  libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
-
-
-	  cv::namedWindow("PlaneScan", CV_WINDOW_NORMAL);
-	  cv::moveWindow("PlaneScan", 0, 0);
-	  cv::setWindowProperty("PlaneScan", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-
-	  bool tracking = false;
-	  cv::Rect roi_b;
-	  int maxCorners = 100;
-	  std::vector<cv::Point2f> cornersA;
-	  cornersA.reserve(maxCorners);
-
-	  while (!shutdown)
-	  {
-
-		  (&listener)->waitForNewFrame(frames);
-		  libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
-		  libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
-
-		  registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
-		  cv::Mat frame;
-		  frame = frameToMat("registered", &registered);
-		  cv::Mat depthFrame = frameToMat("depth", depth);
-		  cv::Mat board(424, 512, CV_8UC4, cv::Scalar::all(255));
-		  int centerx = 256;
-		  int centery = 212;
-		  cv::Mat tempFrame;
-		  cv::normalize(depthFrame, tempFrame, 0, 1, cv::NORM_MINMAX, CV_32FC1);
-		  //showMat(tempFrame);
-		  depthFrame *= 0.001;
-		  for (int i = 0; i < 512; i++)
-		  {
-			  for (int j = 0; j < 424; j++)
-			  {
-				  float x = 0, y = 0, z = 0, color = 0;
-				  registration->getPointXYZRGB(&undistorted, &registered,
-					  i, j,
-					  x, y, z, color);
-				  z = depthFrame.at<float>(j, i);
-				  
-				  //if (i <= centerx + 30 && i >= centerx - 30 && j <= centery + 30 && j >= centery - 30) {
-					  //frame.at<float>(i, j) = 0;
-					  x = (float)i / 512.0;
-					  y = (float)j / 424.0;
-					  double res = (x - 0.5)*(x - 0.5) + (y - 0.5)*(y - 0.5) + (z - 1)*(z - 1);
-					  if (res < 0.015) {
-						  cv::Mat ROI = board(cv::Rect(i, j, 1, 1));
-						  ROI.setTo(cv::Scalar(100, 100, 150, 100));
-					  }
-				  //}
-			  }
-		  }
-		  cv::imshow("PlaneScan", board);
-
-		  int op = cv::waitKey(1);
-		  if (op == 1113997 || op == 1048586 || op == 1048608 || op == 10 || op == 32)
-		  {
-			  shutdown = true;
-			  cv::destroyWindow("PlaneScan");
-		  }
-		  listener.release(frames);
-	  }
-	  
+	  Projector *projector = new Projector();
+	  projector->setKinect(&listener, dev);
+	  projector->setMatrices(mt, mr, cam, pro);
+		projector->reprojectPlane(gpuView>0);
 	  dev->stop();
 	  dev->close();
   }

@@ -4,6 +4,7 @@
 #include "viewer.h"
 
 #include <iostream>
+#include <queue>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -195,9 +196,179 @@ void Projector::reproject(bool gpuView)
 	}
 }
 
-
-void Projector::findPlane() //RANSAC thing
+void Projector::reprojectPlane(bool gpuView)
 {
+	libfreenect2::Registration* registration = new libfreenect2::Registration(_dev->getIrCameraParams(), _dev->getColorCameraParams());
+	libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
+	libfreenect2::FrameMap frames;
+	SimpleViewer viewer;
+	bool shutdown = false;
+	cv::Mat board(480, 640, CV_8UC4, cv::Scalar::all(255));
+	if (!gpuView) {
+		cv::namedWindow("reprojection", CV_WINDOW_NORMAL);
+		cv::moveWindow("reprojection", 0, 0);
+		//setWindowProperty("reprojection", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+	}
+	else {
+		viewer.setSize(480, 640); // TO-DO change resolution
+		viewer.initialize();
+		libfreenect2::Frame b(640, 480, 4);
+		b.data = board.data;
+		viewer.addFrame("RGB", &b);
+		shutdown = shutdown || viewer.render();
+	}
+	while (!shutdown)
+	{
+		board = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(255));
+		std::vector<cv::Point3f> wrldSrc;
+		std::vector<cv::Point3f> plnSrc;
+		if (!gpuView) cv::imshow("reprojection", board);
+		(_listener)->waitForNewFrame(frames);
+		libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
+		libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
+		registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
+
+		plnSrc = findPlane(registration, &undistorted, &registered);
+		for (int i = 0; i<512; i++)
+		{
+			for (int j = 0; j<424; j++)
+			{
+				float x = 0, y = 0, z = 0, color = 0;
+				registration->getPointXYZRGB(&undistorted, &registered,
+					i, j,
+					x, y, z, color);
+
+				if (z>0.5 && z<1.7)
+				{
+					x = static_cast<float>(x + right / ((double)640.0)); //////////TO-DO fix that
+					y = static_cast<float>(y + up / ((double)480.0));
+
+					x -= 0.5;
+					y -= 0.5;
+					double PI = 3.14159265;
+					x = static_cast<float>(std::cos(rotX * PI / 180) * x - std::sin(rotX * PI / 180) * y);
+					y = static_cast<float>(std::sin(rotX * PI / 180) * x + std::cos(rotX * PI / 180) * y);
+
+					x += 0.5;
+					y += 0.5;
+
+					wrldSrc.push_back(cv::Point3f(x * 100,
+						y * 100,
+						z * 100));
+				}
+			}
+		}
+
+		if (wrldSrc.size() > 0) {
+			std::vector<cv::Point2f> projected = projectPoints(wrldSrc);
+			for (int i = 0; i < projected.size(); i++)
+			{
+				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
+
+					cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
+					ROI.setTo(cv::Scalar(100, 100, 150, 100));
+				}
+			}
+			projected = projectPoints(plnSrc);
+			for (int i = 0; i < projected.size(); i++)
+			{
+				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
+
+					cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 1, 1));
+					ROI.setTo(cv::Scalar(150, 100, 100, 100));
+				}
+			}
+			if (!gpuView) imshow("reprojection", board);
+			else {
+				libfreenect2::Frame b(640, 480, 4);
+				b.data = board.data;
+				viewer.addFrame("RGB", &b);
+				shutdown = shutdown || viewer.render();
+			}
+		}
+		(_listener)->release(frames);
+		if (!gpuView) {
+			int op = cv::waitKey(50);
+			if (op == 100 || (char)(op) == 'd') right -= 1;
+			if (op == 115 || (char)(op) == 's') up += 1;
+			if (op == 97 || (char)(op) == 'a') right += 1;
+			if (op == 119 || (char)(op) == 'w') up -= 1;
+
+			if (op == 114 || (char)(op) == 'r') rotX -= 0.5;
+			if (op == 102 || (char)(op) == 'f') rotX += 0.5;
+
+			if (op == 1113997 || op == 1048586 || op == 1048608 || op == 10 || op == 32)
+			{
+				std::cout << "right = " << right << ";\nup = " << up << ";\nrotX = " << rotX << ";\n";
+				break;
+			}
+		}
+		else {
+			right = viewer.offsetX;
+			up = viewer.offsetY;
+			rotX = viewer.rot;
+		}
+	}
+	if (!gpuView) cv::destroyWindow("reprojection");
+	else {
+		viewer.stopWindow();
+	}
+}
+
+
+
+
+std::vector<cv::Point3f> Projector::findPlane(libfreenect2::Registration *registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered) //RANSAC thing
+{
+	std::vector<cv::Point3f> wrldSrc;
+	std::queue<cv::Point3f> queue;
+	bool visited[513][425];
+	for (int i = 0; i <= 512; i++)
+		for (int j = 0; j <= 424; j++)
+			visited[i][j] = false;
+	cv::Vec3f a, b;
+	float x1 = 0, y1 = 0, z1 = 0, color = 0;
+	registration->getPointXYZRGB(undistorted, registered, 256, 212, x1, y1, z1, color);
+	float x2 = 0, y2 = 0, z2 = 0;
+	registration->getPointXYZRGB(undistorted, registered, 254, 212, x2, y2, z2, color);
+	float x3 = 0, y3 = 0, z3 = 0;
+	registration->getPointXYZRGB(undistorted, registered, 254, 214, x3, y3, z3, color);
+	a = cv::Vec3f(x2 - x1, y2 - y1, z2 - z1);
+	b = cv::Vec3f(x3 - x1, y3 - y1, z3 - z1);
+	cv::Vec3f n = a.cross(b);
+	cv::normalize(n);
+	
+	for (int i = 0; i<512; i++)
+	{
+		for (int j = 0; j<424; j++)
+		{
+			float x = 0, y = 0, z = 0, color = 0;
+			registration->getPointXYZRGB(undistorted, registered,
+				i, j,
+				x, y, z, color);
+
+			if (z>1.0 && z<1.7)
+			{
+				x = static_cast<float>(x + right / ((double)640.0)); //////////TO-DO fix that
+				y = static_cast<float>(y + up / ((double)480.0));
+
+				x -= 0.5;
+				y -= 0.5;
+				double PI = 3.14159265;
+				x = static_cast<float>(std::cos(rotX * PI / 180) * x - std::sin(rotX * PI / 180) * y);
+				y = static_cast<float>(std::sin(rotX * PI / 180) * x + std::cos(rotX * PI / 180) * y);
+
+				x += 0.5;
+				y += 0.5;
+
+				wrldSrc.push_back(cv::Point3f(x * 100,
+					y * 100,
+					z * 100));
+			}
+		}
+	}
+
+	return wrldSrc;
 }
 
 std::vector<cv::Point2f> Projector::projectPoints(std::vector<cv::Point3f> in)
