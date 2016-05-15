@@ -7,6 +7,7 @@ libs/flann/
 libs/libfreenect2pclgrabber/
 libs/opencv_contrib/
 libs/pcl/
+libs/ogre/
 
 .gitignore
 # Windows image file caches
