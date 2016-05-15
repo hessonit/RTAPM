@@ -11,6 +11,20 @@
 #include <vtkTextProperty.h>
 
 
+#include <vtkSphere.h>
+#include <vtkSampleFunction.h>
+#include <vtkSmartVolumeMapper.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkPiecewiseFunction.h>
+#include <vtkVolumeProperty.h>
+#include <vtkCamera.h>
+#include <vtkImageShiftScale.h>
+#include <vtkImageData.h>
+#include <vtkPointData.h>
+#include <vtkDataArray.h>
+#include <vtkXMLImageDataReader.h>
+
+
 // Test1
 #include "pt.h"
 //#include "k2g.h"
@@ -328,57 +342,298 @@ bool guard = true;
 
 
 
+//
+//int vtkTest()
+//{
+//	// Create a sphere
+//	vtkSmartPointer<vtkSphereSource> sphereSource =
+//		vtkSmartPointer<vtkSphereSource>::New();
+//	sphereSource->SetCenter(0.0, 0.0, 0.0);
+//	sphereSource->SetRadius(5.0);
+//	sphereSource->Update();
+//
+//	// Create a mapper
+//	vtkSmartPointer<vtkPolyDataMapper> mapper =
+//		vtkSmartPointer<vtkPolyDataMapper>::New();
+//#if VTK_MAJOR_VERSION <= 5
+//	mapper->SetInput(sphereSource->GetOutput());
+//#else
+//	mapper->SetInputData(sphereSource->GetOutput());
+//#endif
+//
+//	// Create an actor
+//	vtkSmartPointer<vtkActor> actor =
+//		vtkSmartPointer<vtkActor>::New();
+//	actor->SetMapper(mapper);
+//
+//	// Create a renderer
+//	vtkSmartPointer<vtkRenderer> renderer =
+//		vtkSmartPointer<vtkRenderer>::New();
+//	renderer->SetBackground(1, 1, 1); // Set background color to white
+//	renderer->AddActor(actor);
+//
+//	// Create a render window
+//	vtkSmartPointer<vtkRenderWindow> renderWindow =
+//		vtkSmartPointer<vtkRenderWindow>::New();
+//	renderWindow->AddRenderer(renderer);
+//
+//	// Create an interactor
+//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+//		vtkSmartPointer<vtkRenderWindowInteractor>::New();
+//	renderWindowInteractor->SetRenderWindow(renderWindow);
+//
+//	// Setup the text and add it to the renderer
+//	vtkSmartPointer<vtkTextActor> textActor =
+//		vtkSmartPointer<vtkTextActor>::New();
+//	textActor->SetInput("Hello world");
+//	textActor->SetPosition2(10, 40);
+//	textActor->GetTextProperty()->SetFontSize(24);
+//	textActor->GetTextProperty()->SetColor(1.0, 0.0, 0.0);
+//	renderer->AddActor2D(textActor);
+//
+//	// Render and interact
+//	renderWindow->Render();
+//	renderWindowInteractor->Start();
+//
+//	return EXIT_SUCCESS;
+//}
+//
+//void CreateImageData(vtkImageData* imageData)
+//{
+//	// Create a spherical implicit function.
+//	vtkSmartPointer<vtkSphere> sphere =
+//		vtkSmartPointer<vtkSphere>::New();
+//	sphere->SetRadius(0.1);
+//	sphere->SetCenter(0.0, 0.0, 0.0);
+//
+//	vtkSmartPointer<vtkSampleFunction> sampleFunction =
+//		vtkSmartPointer<vtkSampleFunction>::New();
+//	sampleFunction->SetImplicitFunction(sphere);
+//	sampleFunction->SetOutputScalarTypeToDouble();
+//	sampleFunction->SetSampleDimensions(127, 127, 127); // intentional NPOT dimensions.
+//	sampleFunction->SetModelBounds(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+//	sampleFunction->SetCapping(false);
+//	sampleFunction->SetComputeNormals(false);
+//	sampleFunction->SetScalarArrayName("values");
+//	sampleFunction->Update();
+//
+//	vtkDataArray* a = sampleFunction->GetOutput()->GetPointData()->GetScalars("values");
+//	double range[2];
+//	a->GetRange(range);
+//
+//	vtkSmartPointer<vtkImageShiftScale> t =
+//		vtkSmartPointer<vtkImageShiftScale>::New();
+//	t->SetInputConnection(sampleFunction->GetOutputPort());
+//
+//	t->SetShift(-range[0]);
+//	double magnitude = range[1] - range[0];
+//	if (magnitude == 0.0)
+//	{
+//		magnitude = 1.0;
+//	}
+//	t->SetScale(255.0 / magnitude);
+//	t->SetOutputScalarTypeToUnsignedChar();
+//
+//	t->Update();
+//
+//	imageData->ShallowCopy(t->GetOutput());
+//}
+//int vtkTest2()
+//{
+//	vtkSmartPointer<vtkImageData> imageData =
+//		vtkSmartPointer<vtkImageData>::New();
+//	//if (argc < 2)
+//	//{
+//		CreateImageData(imageData);
+//	//}
+//	//else
+//	//{
+//	//	vtkSmartPointer<vtkXMLImageDataReader> reader =
+//	//		vtkSmartPointer<vtkXMLImageDataReader>::New();
+//	//	reader->SetFileName(argv[1]);
+//	//	reader->Update();
+//	//	imageData->ShallowCopy(reader->GetOutput());
+//	//}
+//
+//	vtkSmartPointer<vtkRenderWindow> renWin =
+//		vtkSmartPointer<vtkRenderWindow>::New();
+//	vtkSmartPointer<vtkRenderer> ren1 =
+//		vtkSmartPointer<vtkRenderer>::New();
+//	ren1->SetBackground(0.1, 0.4, 0.2);
+//
+//	renWin->AddRenderer(ren1);
+//
+//	renWin->SetSize(301, 300); // intentional odd and NPOT  width/height
+//
+//	vtkSmartPointer<vtkRenderWindowInteractor> iren =
+//		vtkSmartPointer<vtkRenderWindowInteractor>::New();
+//	iren->SetRenderWindow(renWin);
+//
+//	renWin->Render(); // make sure we have an OpenGL context.
+//
+//	vtkSmartPointer<vtkSmartVolumeMapper> volumeMapper =
+//		vtkSmartPointer<vtkSmartVolumeMapper>::New();
+//	volumeMapper->SetBlendModeToComposite(); // composite first
+//#if VTK_MAJOR_VERSION <= 5
+//	volumeMapper->SetInputConnection(imageData->GetProducerPort());
+//#else
+//	volumeMapper->SetInputData(imageData);
+//#endif  
+//	vtkSmartPointer<vtkVolumeProperty> volumeProperty =
+//		vtkSmartPointer<vtkVolumeProperty>::New();
+//	volumeProperty->ShadeOff();
+//	volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
+//
+//	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity =
+//		vtkSmartPointer<vtkPiecewiseFunction>::New();
+//	compositeOpacity->AddPoint(0.0, 0.0);
+//	compositeOpacity->AddPoint(80.0, 1.0);
+//	compositeOpacity->AddPoint(80.1, 0.0);
+//	compositeOpacity->AddPoint(255.0, 0.0);
+//	volumeProperty->SetScalarOpacity(compositeOpacity); // composite first.
+//
+//	vtkSmartPointer<vtkColorTransferFunction> color =
+//		vtkSmartPointer<vtkColorTransferFunction>::New();
+//	color->AddRGBPoint(0.0, 0.0, 0.0, 1.0);
+//	color->AddRGBPoint(40.0, 1.0, 0.0, 0.0);
+//	color->AddRGBPoint(255.0, 1.0, 1.0, 1.0);
+//	volumeProperty->SetColor(color);
+//
+//	vtkSmartPointer<vtkVolume> volume =
+//		vtkSmartPointer<vtkVolume>::New();
+//	volume->SetMapper(volumeMapper);
+//	volume->SetProperty(volumeProperty);
+//	ren1->AddViewProp(volume);
+//	ren1->ResetCamera();
+//
+//	// Render composite. In default mode. For coverage.
+//	renWin->Render();
+//
+//	// 3D texture mode. For coverage.
+//#if !defined(VTK_LEGACY_REMOVE)
+//	volumeMapper->SetRequestedRenderModeToRayCastAndTexture();
+//#endif // VTK_LEGACY_REMOVE
+//	renWin->Render();
+//
+//	// Software mode, for coverage. It also makes sure we will get the same
+//	// regression image on all platforms.
+//	volumeMapper->SetRequestedRenderModeToRayCast();
+//	renWin->Render();
+//
+//	iren->Start();
+//
+//	return EXIT_SUCCESS;
+//}
+//
+//#include <vtkEarthSource.h>
+//#include <vtkPolyData.h>
+//#include <vtkSmartPointer.h>
+//#include <vtkPolyDataMapper.h>
+//#include <vtkActor.h>
+//#include <vtkRenderWindow.h>
+//#include <vtkRenderer.h>
+//#include <vtkRenderWindowInteractor.h>
+//
+//int vtkTest3()
+//{
+//
+//	//Create a sphere
+//	vtkSmartPointer<vtkEarthSource> earthSource = vtkSmartPointer<vtkEarthSource>::New();
+//	earthSource->OutlineOff();
+//	earthSource->Update();
+//
+//	//Create a mapper and actor
+//	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+//	mapper->SetInputConnection(earthSource->GetOutputPort());
+//
+//	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+//	actor->SetMapper(mapper);
+//
+//	//Create a renderer, render window, and interactor
+//	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
+//	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
+//	renderWindow->AddRenderer(renderer);
+//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
+//	renderWindowInteractor->SetRenderWindow(renderWindow);
+//
+//	//Add the actor to the scene
+//	renderer->AddActor(actor);
+//	renderer->SetBackground(1, 1, 1); // Background color white
+//
+//									  //Render and interact
+//	renderWindow->Render();
+//	renderWindowInteractor->Start();
+//
+//	return EXIT_SUCCESS;
+//}
+//
+#include <vtkOBJReader.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkSmartPointer.h>
+#include <string>
+#include "vtkVRMLImporter.h"
+#include "vtkRenderer.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkOBJImporter.h"
+#include "vtkTestUtilities.h"
+#include "vtkNew.h"
+#include "vtkJPEGWriter.h"
+#include "vtkPNGWriter.h"
+#include "vtkImageCanvasSource2D.h"
+#include "vtkImageCast.h"
+#include "vtkCamera.h"
 
-int vtkTest()
+int vtkTest4(std::string filePath)
 {
-	// Create a sphere
-	vtkSmartPointer<vtkSphereSource> sphereSource =
-		vtkSmartPointer<vtkSphereSource>::New();
-	sphereSource->SetCenter(0.0, 0.0, 0.0);
-	sphereSource->SetRadius(5.0);
-	sphereSource->Update();
+	// Parse command line arguments
+	
 
-	// Create a mapper
+	std::string filename = filePath + ".obj";
+	std::string filenameMTL = filePath + ".mtl";
+	//vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+
+	reader->SetFileName(filename.c_str());
+	//reader->SetFileNameMTL(filenameMTL.c_str());
+	reader->Update();
+
+	//vtkSmartPointer<vtkTexture> colorTexture = vtkSmartPointer<vtkTexture>::New();
+	//colorTexture->SetInputConnection(reader->GetOutputPort());
+	
+	//colorTexture->InterpolateOn();
+
+
+
+	// Visualize
 	vtkSmartPointer<vtkPolyDataMapper> mapper =
 		vtkSmartPointer<vtkPolyDataMapper>::New();
-#if VTK_MAJOR_VERSION <= 5
-	mapper->SetInput(sphereSource->GetOutput());
-#else
-	mapper->SetInputData(sphereSource->GetOutput());
-#endif
+	mapper->SetInputConnection(reader->GetOutputPort());
 
-	// Create an actor
 	vtkSmartPointer<vtkActor> actor =
 		vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper(mapper);
+	
 
-	// Create a renderer
+	//actor->SetTexture(colorTexture);
+	
 	vtkSmartPointer<vtkRenderer> renderer =
 		vtkSmartPointer<vtkRenderer>::New();
-	renderer->SetBackground(1, 1, 1); // Set background color to white
 	renderer->AddActor(actor);
+	renderer->SetBackground(.3, .6, .3); // Background color green
 
-	// Create a render window
 	vtkSmartPointer<vtkRenderWindow> renderWindow =
 		vtkSmartPointer<vtkRenderWindow>::New();
 	renderWindow->AddRenderer(renderer);
 
-	// Create an interactor
 	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
 		vtkSmartPointer<vtkRenderWindowInteractor>::New();
 	renderWindowInteractor->SetRenderWindow(renderWindow);
 
-	// Setup the text and add it to the renderer
-	vtkSmartPointer<vtkTextActor> textActor =
-		vtkSmartPointer<vtkTextActor>::New();
-	textActor->SetInput("Hello world");
-	textActor->SetPosition2(10, 40);
-	textActor->GetTextProperty()->SetFontSize(24);
-	textActor->GetTextProperty()->SetColor(1.0, 0.0, 0.0);
-	renderer->AddActor2D(textActor);
-
-	// Render and interact
-	renderWindow->Render();
 	renderWindowInteractor->Start();
 
 	return EXIT_SUCCESS;
@@ -387,7 +642,8 @@ int vtkTest()
 
 void PT::test1()
 {
-	vtkTest();
+	vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
+	
 }
 
 

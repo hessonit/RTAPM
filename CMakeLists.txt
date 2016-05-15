@@ -10,8 +10,6 @@ project(Niksa)
 #link_directories(${PCL_LIBRARY_DIRS})
 #add_definitions(${PCL_DEFINITIONS})
 
-
-
 set(OpenCV_DIR "${PROJECT_SOURCE_DIR}/libs/install/vc140/opencv")
 find_package(OpenCV REQUIRED)
 include_directories(${OpenCV_INCLUDE_DIRS})
@@ -43,8 +41,24 @@ link_directories(${libusb_LIBRARY})
 set(VTK_DIR "${PROJECT_SOURCE_DIR}/libs/install/vc140/VTK/lib/cmake/vtk-6.3")
 find_package(VTK REQUIRED)
 include(${VTK_USE_FILE})
-# set(GLFW3_DLL "${PROJECT_SOURCE_DIR}/libs/install/vc140/glfw/lib/glfw3.dll")
-#include_directories("${PROJECT_SOURCE_DIR}/libs/libfreenect2pclgrabber")
+
+# C:\local\boost_1_60_0\lib64-msvc-14.0
+
+# set(Boost_USE_STATIC_LIBS   ON)
+set(BOOST_DIR "C:/local/boost_1_60_0")
+# set(BOOST_DLL "C:/local/boost_1_60_0/lib64-msvc-14.0/")
+set(BOOST_LIBRARIES "C:/local/boost_1_60_0/lib64-msvc-14.0/")
+# linker input additional library directories
+include_directories(${BOOST_DIR})
+link_directories(${BOOST_LIBRARIES})
+
+set(OGRE_DIR "${PROJECT_SOURCE_DIR}/libs/install/vc140/OGRE/include")
+set(OGRE_DLL "${PROJECT_SOURCE_DIR}/libs/install/vc140/OGRE/bin/Release")
+set(OGRE_LIBRARIES "${PROJECT_SOURCE_DIR}/libs/install/vc140/OGRE/lib/Release/OgreMain.lib")
+include_directories(${OGRE_DIR})
+link_directories(${OGRE_LIBRARIES})
+
+
 
 set(common_libraries 
 	${OpenCV_LIBRARIES}
@@ -54,12 +68,15 @@ set(common_libraries
 #	${libjpegturbo_LIBRARIES} 
 	${GLFW3_LIBRARY} 
 	${libusb_LIBRARY}
-	
+	${OGRE_LIBRARIES}
+	${BOOST_LIBRARIES}
+
 	)
 
 
 #add_executable(capture_depth_frames src/capture_depth_frames.cpp)
 #target_link_libraries(capture_depth_frames ${common_libraries})
+
 
 include_directories("${PROJECT_SOURCE_DIR}/include")
 add_executable(Niksa
@@ -74,8 +91,10 @@ add_executable(Niksa
 	src/util.cpp
 	include/calibration.h
 	src/calibration.cpp
-	include/VideoFaceDetector.h
-	src/VideoFaceDetector.cpp
+	# include/VideoFaceDetector.h
+	# src/VideoFaceDetector.cpp	
+	include/Projector.h
+	src/Projector.cpp
     include/intrinsics.h
     src/intrinsics.cpp
     include/CTObject.h
@@ -89,12 +108,17 @@ target_link_libraries(Niksa ${common_libraries})
 
 # add_custom_command(TARGET Niksa POST_BUILD
     # COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        # "${PROJECT_SOURCE_DIR}/libs/install/vc140/VTK/bin/vtkRenderingOpenGL-6.3.dll"
+        # "${PROJECT_SOURCE_DIR}/libs/irrlicht/bin/Win32-VisualStudio/Irrlicht.dll"
         # $<TARGET_FILE_DIR:Niksa>)
 
 add_custom_command(TARGET Niksa POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${PROJECT_SOURCE_DIR}/libs/install/vc140/VTK/bin/"
+        $<TARGET_FILE_DIR:Niksa>)
+		
+add_custom_command(TARGET Niksa POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/libs/install/vc140/OGRE/bin/Release/"
         $<TARGET_FILE_DIR:Niksa>)
 
 # add_custom_command(TARGET capture_depth_frames POST_BUILD
