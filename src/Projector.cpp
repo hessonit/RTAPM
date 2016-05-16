@@ -261,6 +261,7 @@ void Projector::reprojectPlane(bool gpuView)
 
 		if (wrldSrc.size() > 0) {
 			std::vector<cv::Point2f> projected = projectPoints(wrldSrc);
+			//std::vector<cv::Point2f> projected = (wrldSrc);
 			for (int i = 0; i < projected.size(); i++)
 			{
 				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
@@ -269,13 +270,16 @@ void Projector::reprojectPlane(bool gpuView)
 					ROI.setTo(cv::Scalar(100, 100, 150, 100));
 				}
 			}
-			projected = projectPoints(plnSrc);
-			for (int i = 0; i < projected.size(); i++)
-			{
-				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
+			if (plnSrc.size() > 0) {
+				//projected = projectPoints(plnSrc);
+				projected = projectPoints(plnSrc);
+				for (int i = 0; i < projected.size(); i++)
+				{
+					if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
 
-					cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 1, 1));
-					ROI.setTo(cv::Scalar(150, 100, 100, 100));
+						cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
+						ROI.setTo(cv::Scalar(250, 100, 100, 100));
+					}
 				}
 			}
 			if (!gpuView) imshow("reprojection", board);
@@ -304,9 +308,12 @@ void Projector::reprojectPlane(bool gpuView)
 			}
 		}
 		else {
-			right = viewer.offsetX;
+			/*right = viewer.offsetX;
 			up = viewer.offsetY;
-			rotX = viewer.rot;
+			rotX = viewer.rot;*/
+			right = 0;
+			up = 0;
+			rotX = 0;
 		}
 	}
 	if (!gpuView) cv::destroyWindow("reprojection");
@@ -326,18 +333,25 @@ std::vector<cv::Point3f> Projector::findPlane(libfreenect2::Registration *regist
 	for (int i = 0; i <= 512; i++)
 		for (int j = 0; j <= 424; j++)
 			visited[i][j] = false;
-	cv::Vec3f a, b;
+	cv::Vec3f f1, f2;
 	float x1 = 0, y1 = 0, z1 = 0, color = 0;
-	registration->getPointXYZRGB(undistorted, registered, 256, 212, x1, y1, z1, color);
+	registration->getPointXYZRGB(undistorted, registered, 256, 213, x1, y1, z1, color);
 	float x2 = 0, y2 = 0, z2 = 0;
-	registration->getPointXYZRGB(undistorted, registered, 254, 212, x2, y2, z2, color);
+	registration->getPointXYZRGB(undistorted, registered, 255, 212, x2, y2, z2, color);
 	float x3 = 0, y3 = 0, z3 = 0;
 	registration->getPointXYZRGB(undistorted, registered, 254, 214, x3, y3, z3, color);
-	a = cv::Vec3f(x2 - x1, y2 - y1, z2 - z1);
-	b = cv::Vec3f(x3 - x1, y3 - y1, z3 - z1);
-	cv::Vec3f n = a.cross(b);
-	cv::normalize(n);
-	
+	x1 *= 100; y1 *= 100; z1 *= 100;
+	x2 *= 100; y2 *= 100; z2 *= 100;
+	x3 *= 100; y3 *= 100; z3 *= 100;
+	f1 = cv::Vec3f(x2 - x1, y2 - y1, z2 - z1);
+	f2 = cv::Vec3f(x3 - x1, y3 - y1, z3 - z1);
+	cv::Vec3f n = f1.cross(f2);
+	//cv::normalize(n);
+	double a, b, c, d;
+	a = n[0];
+	b = n[1];
+	c = n[2];
+	d = -(a*x1 + b*y1 + c*z1);
 	for (int i = 0; i<512; i++)
 	{
 		for (int j = 0; j<424; j++)
@@ -347,7 +361,7 @@ std::vector<cv::Point3f> Projector::findPlane(libfreenect2::Registration *regist
 				i, j,
 				x, y, z, color);
 
-			if (z>1.0 && z<1.7)
+			if (z > 0.5 && z < 0.95)
 			{
 				x = static_cast<float>(x + right / ((double)640.0)); //////////TO-DO fix that
 				y = static_cast<float>(y + up / ((double)480.0));
@@ -360,10 +374,10 @@ std::vector<cv::Point3f> Projector::findPlane(libfreenect2::Registration *regist
 
 				x += 0.5;
 				y += 0.5;
-
-				wrldSrc.push_back(cv::Point3f(x * 100,
-					y * 100,
-					z * 100));
+				if (x*a*100 + y*b*100 + z*c*100 + d < 0.00001)
+					wrldSrc.push_back(cv::Point3f(x * 100,
+													y * 100,
+													z * 100));
 			}
 		}
 	}
