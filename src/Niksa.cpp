@@ -337,7 +337,7 @@ if(tt == 1){
 	  Projector *projector = new Projector();
 	  projector->setKinect(&listener, dev);
 	  projector->setMatrices(mt, mr, cam, pro);
-		projector->reprojectPlane(gpuView>0);
+		projector->showRectangle(gpuView>0);
 	  dev->stop();
 	  dev->close();
   }

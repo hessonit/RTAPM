@@ -16,13 +16,13 @@ public:
 	void setKinect(libfreenect2::SyncMultiFrameListener *listener, libfreenect2::Freenect2Device *dev);
 	void ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim);
 	void reproject(bool gpuView = false);
-	void reprojectPlane(bool gpuView = false);
+	void showRectangle(bool gpuView = false);
 
 	int right, up, rotX;
 
 private:
 
-	std::vector<cv::Point3f> findPlane(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
+	std::vector<cv::Point3f> findRectangle(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
 	std::vector<cv::Point2f> projectPoints(std::vector<cv::Point3f> in);
 
 	cv::Mat _mt, _mr, _cam, _pro;
