@@ -240,15 +240,15 @@ void PT::test2(int argc, char *argv[])
 /// [registration setup]
 
   size_t framecount = 0;
-#ifdef EXAMPLES_WITH_OPENGL_SUPPORT
+//#ifdef EXAMPLES_WITH_OPENGL_SUPPORT
   // viewer_enabled = false;
   // SimpleViewer viewer; 
-  Viewer viewer;
+  SimpleViewer viewer;
   if (viewer_enabled)
     viewer.initialize();
-#else
-  viewer_enabled = false;
-#endif
+//#else
+  //viewer_enabled = false;
+//#endif
 
 bool guard = true;
 /// [loop start]
@@ -604,10 +604,7 @@ int vtkTest4(std::string filePath)
 
 	//vtkSmartPointer<vtkTexture> colorTexture = vtkSmartPointer<vtkTexture>::New();
 	//colorTexture->SetInputConnection(reader->GetOutputPort());
-	
 	//colorTexture->InterpolateOn();
-
-
 
 	// Visualize
 	vtkSmartPointer<vtkPolyDataMapper> mapper =
@@ -639,10 +636,150 @@ int vtkTest4(std::string filePath)
 	return EXIT_SUCCESS;
 }
 
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+
+int vtkTest5()
+{
+	// Sphere 1
+	vtkSmartPointer<vtkSphereSource> sphereSource1 =
+		vtkSmartPointer<vtkSphereSource>::New();
+	sphereSource1->SetCenter(0.0, 0.0, 0.0);
+	sphereSource1->SetRadius(4.0);
+	sphereSource1->Update();
+
+	vtkSmartPointer<vtkPolyDataMapper> mapper1 =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper1->SetInputConnection(sphereSource1->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> actor1 =
+		vtkSmartPointer<vtkActor>::New();
+	actor1->SetMapper(mapper1);
+
+	// Sphere 2
+	vtkSmartPointer<vtkSphereSource> sphereSource2 =
+		vtkSmartPointer<vtkSphereSource>::New();
+	sphereSource2->SetCenter(10.0, 0.0, 0.0);
+	sphereSource2->SetRadius(3.0);
+	sphereSource2->Update();
+
+	// Create a mapper
+	vtkSmartPointer<vtkPolyDataMapper> mapper2 =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper2->SetInputConnection(sphereSource2->GetOutputPort());
+
+	// Create an actor
+	vtkSmartPointer<vtkActor> actor2 =
+		vtkSmartPointer<vtkActor>::New();
+	actor2->SetMapper(mapper2);
+
+	// A renderer and render window
+	vtkSmartPointer<vtkRenderer> renderer =
+		vtkSmartPointer<vtkRenderer>::New();
+	vtkSmartPointer<vtkRenderWindow> renderWindow =
+		vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->AddRenderer(renderer);
+
+	// An interactor
+	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+		vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	renderWindowInteractor->SetRenderWindow(renderWindow);
+
+	// Add the actors to the scene
+	renderer->AddActor(actor1);
+	renderer->AddActor(actor2);
+	renderer->SetBackground(1, 1, 1); // Background color white
+
+									  // Render an image (lights and cameras are created automatically)
+	renderWindow->Render();
+
+	vtkSmartPointer<vtkInteractorStyleTrackballCamera> style =
+		vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+
+	renderWindowInteractor->SetInteractorStyle(style);
+
+	// Begin mouse interaction
+	renderWindowInteractor->Start();
+
+	return EXIT_SUCCESS;
+}
+
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkWindowToImageFilter.h>
+#include <vtkPNGWriter.h>
+#include <vtkGraphicsFactory.h>
+//#include <vtkImagingFactory.h>
+
+int vtkTest6()
+{
+	// Setup offscreen rendering
+	vtkSmartPointer<vtkGraphicsFactory> graphics_factory =
+		vtkSmartPointer<vtkGraphicsFactory>::New();
+	graphics_factory->SetOffScreenOnlyMode(1);
+	graphics_factory->SetUseMesaClasses(1);
+
+	//vtkSmartPointer<vtkImagingFactory> imaging_factory =
+	//	vtkSmartPointer<vtkImagingFactory>::New();
+	//imaging_factory->SetUseMesaClasses(1);
+
+	// Create a sphere
+	vtkSmartPointer<vtkSphereSource> sphereSource =
+		vtkSmartPointer<vtkSphereSource>::New();
+
+	// Create a mapper and actor
+	vtkSmartPointer<vtkPolyDataMapper> mapper =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputConnection(sphereSource->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> actor =
+		vtkSmartPointer<vtkActor>::New();
+	actor->SetMapper(mapper);
+
+	// A renderer and render window
+	vtkSmartPointer<vtkRenderer> renderer =
+		vtkSmartPointer<vtkRenderer>::New();
+	vtkSmartPointer<vtkRenderWindow> renderWindow =
+		vtkSmartPointer<vtkRenderWindow>::New();
+	renderWindow->SetOffScreenRendering(1);
+	renderWindow->AddRenderer(renderer);
+
+	// Add the actors to the scene
+	renderer->AddActor(actor);
+	renderer->SetBackground(.1, .1, .1); // Background color white
+
+	renderWindow->Render();
+	//renderWindow->GetOffScreenRendering();
+	vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+		vtkSmartPointer<vtkWindowToImageFilter>::New();
+	windowToImageFilter->SetInput(renderWindow);
+	windowToImageFilter->Update();
+	
+	vtkSmartPointer<vtkPNGWriter> writer =
+		vtkSmartPointer<vtkPNGWriter>::New();
+	writer->SetFileName("screenshot.png");
+	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
+	writer->Write();
+
+	return EXIT_SUCCESS;
+}
 
 void PT::test1()
 {
-	vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
+	//vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
+	vtkTest6();
 	
 }
 
