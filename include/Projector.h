@@ -15,6 +15,7 @@ public:
 	void setMatrices(cv::Mat mt, cv::Mat mr, cv::Mat cam, cv::Mat pro);
 	void setKinect(libfreenect2::SyncMultiFrameListener *listener, libfreenect2::Freenect2Device *dev);
 	void ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim);
+	void objProjection(std::string objPath);
 	void reproject(bool gpuView = false);
 	void showRectangle(bool gpuView = false);
 

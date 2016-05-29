@@ -767,6 +767,8 @@ int vtkTest6()
 	windowToImageFilter->SetInput(renderWindow);
 	windowToImageFilter->Update();
 	
+	//windowToImageFilter->GetOutput();
+
 	vtkSmartPointer<vtkPNGWriter> writer =
 		vtkSmartPointer<vtkPNGWriter>::New();
 	writer->SetFileName("screenshot.png");

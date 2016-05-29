@@ -294,7 +294,7 @@ if(tt == 1){
 
   int test = 0;
   PT ptest;
-  std::cout<<"VTKTEST(1) or LIBFREENECT2(2) or PlaneScan(3) or CT Viewer(4) or Reproject(5) or CT data viewer(6)\n";
+  std::cout<<"VTKTEST(1) or LIBFREENECT2(2) or PlaneScan(3) or CT Viewer(4) or Reproject(5) or CT data viewer(6) or RTAP(7)\n";
   std::cin >> test;
   if(test == 1)
     ptest.test1(); 
@@ -416,6 +416,48 @@ if(tt == 1){
 	  //obj.showData();
 	  obj.showDataFromView();
   }
+  if (test == 7) {
+	  int gpuView = 0;
+	  std::cout << "CPU view(0) or GPU view(1)\n";
+	  std::cin >> gpuView;
+	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
+		  17.7872756163266,
+		  -6.798784049003872);
+
+	  cv::Mat mr = (cv::Mat1f(3, 1) << 2.178677563707194,
+		  2.096964130591053,
+		  0.1258202253438768);
+
+	  cv::Mat cam = (cv::Mat_<double>(3, 3) << 1053.314135376467, 0, 670.864138058805,
+		  0, 1059.961617203515, 291.5273582648912,
+		  0, 0, 1);
+
+	  cv::Mat pro = (cv::Mat1f(5, 1) << 0, 0, 0, 0, 0);
+	  libfreenect2::Freenect2 freenect2;
+	  libfreenect2::Freenect2Device *dev = 0;
+	  libfreenect2::PacketPipeline *pipeline = 0;
+	  libfreenect2::setGlobalLogger(NULL);
+	  if (freenect2.enumerateDevices() == 0) {
+		  std::cout << "no device connected!" << std::endl;
+		  return 0;
+	  }
+	  std::string serial = freenect2.getDefaultDeviceSerialNumber();
+	  if (!pipeline)
+		  pipeline = new libfreenect2::OpenGLPacketPipeline();
+	  dev = freenect2.openDevice(serial, pipeline);
+	  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+	  dev->setColorFrameListener(&listener);
+	  dev->setIrAndDepthFrameListener(&listener);
+	  dev->start();
+		  Projector *projector = new Projector();
+		  projector->setKinect(&listener, dev);
+		  projector->setMatrices(mt, mr, cam, pro);
+		  projector->reproject(gpuView>0);
+	  dev->stop();
+	  dev->close();
+  }
+
+
 }
   return 0;
 }

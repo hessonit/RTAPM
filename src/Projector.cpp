@@ -89,6 +89,11 @@ void Projector::ctProjection(std::string ctFilePath, int xDim, int yDim, int zDi
 
 }
 
+void Projector::objProjection(std::string objPath)
+{
+
+}
+
 void Projector::reproject(bool gpuView)
 {
 	libfreenect2::Registration* registration = new libfreenect2::Registration(_dev->getIrCameraParams(), _dev->getColorCameraParams());
@@ -276,6 +281,8 @@ void Projector::showRectangle(bool gpuView)
 			}
 			if (plnSrc.size() > 0) {
 				projected = projectPoints(plnSrc);
+				cv::Mat cont = cv::Mat(480, 640, CV_8UC1, cv::Scalar::all(0));
+
 				cv::Point2d maxX(-1, 0);
 				cv::Point2d maxY(0, -1);
 				cv::Point2d minX(99999999, 0);
@@ -283,22 +290,58 @@ void Projector::showRectangle(bool gpuView)
 				for (int i = 0; i < projected.size(); i++)
 				{
 					if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
-						if (projected[i].y > maxX.x) maxX = cv::Point2d(projected[i].y, 480 - projected[i].x);
-						if (480-projected[i].x > maxY.y) maxY = cv::Point2d(projected[i].y, 480 - projected[i].x);
-
-						if (projected[i].y < minX.x) minX = cv::Point2d(projected[i].y, 480 - projected[i].x);
-						if (480-projected[i].x < minY.y) minY = cv::Point2d(projected[i].y, 480 - projected[i].x);
+						//if (projected[i].y > maxX.x) maxX = cv::Point2d(projected[i].y, 480 - projected[i].x);
+						//if (480-projected[i].x > maxY.y) maxY = cv::Point2d(projected[i].y, 480 - projected[i].x);
+						//if (projected[i].y < minX.x) minX = cv::Point2d(projected[i].y, 480 - projected[i].x);
+						//if (480-projected[i].x < minY.y) minY = cv::Point2d(projected[i].y, 480 - projected[i].x);
 
 						cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
 						ROI.setTo(cv::Scalar(250, 100, 100, 100));
+
+						cont.at<uchar>(static_cast<int>(480 - projected[i].x), static_cast<int>(projected[i].y), 0) = 255;
+						
+
 						//ROI = rect(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
 						//ROI.setTo(cv::Scalar(250, 100, 100, 100));
 					}
 				}
-				cv::line(board, minY, maxX, cv::Scalar(100, 250, 100, 100), 2);
-				cv::line(board, maxX, maxY, cv::Scalar(0, 0, 0, 100), 2);
-				cv::line(board, maxY, minX, cv::Scalar(0, 150, 0, 0), 2);
-				cv::line(board, minX, minY, cv::Scalar(150, 0, 0, 0), 2);
+				vector<vector<cv::Point> > contours;
+				vector<cv::Vec4i> hierarchy;
+				cv::GaussianBlur(cont, cont, cv::Size(7, 7), 5, 11);
+				
+
+
+				//cv::blur(cont, cont, cv::Size(4, 4));
+				//cv::threshold(cont, cont, 80, 255, cv::THRESH_BINARY);
+				findContours(cont, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
+				//drawContours(board, contours, 0, cv::Scalar(0, 255, 0), 5);
+				//std::cout << "countours: " << contours[0].size() << "\n";
+
+				//cv::line(board, minY, maxX, cv::Scalar(100, 250, 100, 100), 2);
+				//cv::line(board, maxX, maxY, cv::Scalar(0, 0, 0, 100), 2);
+				//cv::line(board, maxY, minX, cv::Scalar(0, 150, 0, 0), 2);
+				//cv::line(board, minX, minY, cv::Scalar(150, 0, 0, 0), 2);
+
+				vector<vector<cv::Point> > contours_poly(contours.size());
+				vector<cv::Rect> boundRect(contours.size());
+				vector<cv::Point2f>center(contours.size());
+				vector<float>radius(contours.size());
+
+				for (int i = 0; i < contours.size(); i++)
+				{
+					cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 10, true);
+					//std::cout << contours[i].size() << " " << contours_poly[i].size() << "\n";
+				}
+
+				for (int i = 0; i< contours.size(); i++)
+				{
+					drawContours(board, contours_poly, 0, cv::Scalar(0, 255, 0), 5);
+				}
+
+				
+				//imshow("reprojection", cont);
+				//imshow("reprojection", board);
+
 			}
 			if (!gpuView) imshow("reprojection", board);
 			else {
@@ -352,7 +395,7 @@ std::vector<cv::Point3f> Projector::findRectangle(libfreenect2::Registration *re
 	for (int i = 0; i <= 512; i++)
 		for (int j = 0; j <= 424; j++)
 			visited[i][j] = false;
-	double constant = 0.005;
+	double constant = 0.007;
 	int num = 100;
 	float x1 = 0, y1 = 0, z1 = 0, color = 0;
 	registration->getPointXYZRGB(undistorted, registered, 256, 213, x1, y1, z1, color);
