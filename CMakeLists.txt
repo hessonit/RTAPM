@@ -99,6 +99,8 @@ add_executable(Niksa
     src/intrinsics.cpp
     include/CTObject.h
 	src/CTObject.cpp
+    include/objObject.h
+	src/objObject.cpp
   
 	src/Niksa.cpp
 	)
