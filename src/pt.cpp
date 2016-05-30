@@ -341,232 +341,6 @@ bool guard = true;
 }
 
 
-
-//
-//int vtkTest()
-//{
-//	// Create a sphere
-//	vtkSmartPointer<vtkSphereSource> sphereSource =
-//		vtkSmartPointer<vtkSphereSource>::New();
-//	sphereSource->SetCenter(0.0, 0.0, 0.0);
-//	sphereSource->SetRadius(5.0);
-//	sphereSource->Update();
-//
-//	// Create a mapper
-//	vtkSmartPointer<vtkPolyDataMapper> mapper =
-//		vtkSmartPointer<vtkPolyDataMapper>::New();
-//#if VTK_MAJOR_VERSION <= 5
-//	mapper->SetInput(sphereSource->GetOutput());
-//#else
-//	mapper->SetInputData(sphereSource->GetOutput());
-//#endif
-//
-//	// Create an actor
-//	vtkSmartPointer<vtkActor> actor =
-//		vtkSmartPointer<vtkActor>::New();
-//	actor->SetMapper(mapper);
-//
-//	// Create a renderer
-//	vtkSmartPointer<vtkRenderer> renderer =
-//		vtkSmartPointer<vtkRenderer>::New();
-//	renderer->SetBackground(1, 1, 1); // Set background color to white
-//	renderer->AddActor(actor);
-//
-//	// Create a render window
-//	vtkSmartPointer<vtkRenderWindow> renderWindow =
-//		vtkSmartPointer<vtkRenderWindow>::New();
-//	renderWindow->AddRenderer(renderer);
-//
-//	// Create an interactor
-//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-//		vtkSmartPointer<vtkRenderWindowInteractor>::New();
-//	renderWindowInteractor->SetRenderWindow(renderWindow);
-//
-//	// Setup the text and add it to the renderer
-//	vtkSmartPointer<vtkTextActor> textActor =
-//		vtkSmartPointer<vtkTextActor>::New();
-//	textActor->SetInput("Hello world");
-//	textActor->SetPosition2(10, 40);
-//	textActor->GetTextProperty()->SetFontSize(24);
-//	textActor->GetTextProperty()->SetColor(1.0, 0.0, 0.0);
-//	renderer->AddActor2D(textActor);
-//
-//	// Render and interact
-//	renderWindow->Render();
-//	renderWindowInteractor->Start();
-//
-//	return EXIT_SUCCESS;
-//}
-//
-//void CreateImageData(vtkImageData* imageData)
-//{
-//	// Create a spherical implicit function.
-//	vtkSmartPointer<vtkSphere> sphere =
-//		vtkSmartPointer<vtkSphere>::New();
-//	sphere->SetRadius(0.1);
-//	sphere->SetCenter(0.0, 0.0, 0.0);
-//
-//	vtkSmartPointer<vtkSampleFunction> sampleFunction =
-//		vtkSmartPointer<vtkSampleFunction>::New();
-//	sampleFunction->SetImplicitFunction(sphere);
-//	sampleFunction->SetOutputScalarTypeToDouble();
-//	sampleFunction->SetSampleDimensions(127, 127, 127); // intentional NPOT dimensions.
-//	sampleFunction->SetModelBounds(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
-//	sampleFunction->SetCapping(false);
-//	sampleFunction->SetComputeNormals(false);
-//	sampleFunction->SetScalarArrayName("values");
-//	sampleFunction->Update();
-//
-//	vtkDataArray* a = sampleFunction->GetOutput()->GetPointData()->GetScalars("values");
-//	double range[2];
-//	a->GetRange(range);
-//
-//	vtkSmartPointer<vtkImageShiftScale> t =
-//		vtkSmartPointer<vtkImageShiftScale>::New();
-//	t->SetInputConnection(sampleFunction->GetOutputPort());
-//
-//	t->SetShift(-range[0]);
-//	double magnitude = range[1] - range[0];
-//	if (magnitude == 0.0)
-//	{
-//		magnitude = 1.0;
-//	}
-//	t->SetScale(255.0 / magnitude);
-//	t->SetOutputScalarTypeToUnsignedChar();
-//
-//	t->Update();
-//
-//	imageData->ShallowCopy(t->GetOutput());
-//}
-//int vtkTest2()
-//{
-//	vtkSmartPointer<vtkImageData> imageData =
-//		vtkSmartPointer<vtkImageData>::New();
-//	//if (argc < 2)
-//	//{
-//		CreateImageData(imageData);
-//	//}
-//	//else
-//	//{
-//	//	vtkSmartPointer<vtkXMLImageDataReader> reader =
-//	//		vtkSmartPointer<vtkXMLImageDataReader>::New();
-//	//	reader->SetFileName(argv[1]);
-//	//	reader->Update();
-//	//	imageData->ShallowCopy(reader->GetOutput());
-//	//}
-//
-//	vtkSmartPointer<vtkRenderWindow> renWin =
-//		vtkSmartPointer<vtkRenderWindow>::New();
-//	vtkSmartPointer<vtkRenderer> ren1 =
-//		vtkSmartPointer<vtkRenderer>::New();
-//	ren1->SetBackground(0.1, 0.4, 0.2);
-//
-//	renWin->AddRenderer(ren1);
-//
-//	renWin->SetSize(301, 300); // intentional odd and NPOT  width/height
-//
-//	vtkSmartPointer<vtkRenderWindowInteractor> iren =
-//		vtkSmartPointer<vtkRenderWindowInteractor>::New();
-//	iren->SetRenderWindow(renWin);
-//
-//	renWin->Render(); // make sure we have an OpenGL context.
-//
-//	vtkSmartPointer<vtkSmartVolumeMapper> volumeMapper =
-//		vtkSmartPointer<vtkSmartVolumeMapper>::New();
-//	volumeMapper->SetBlendModeToComposite(); // composite first
-//#if VTK_MAJOR_VERSION <= 5
-//	volumeMapper->SetInputConnection(imageData->GetProducerPort());
-//#else
-//	volumeMapper->SetInputData(imageData);
-//#endif  
-//	vtkSmartPointer<vtkVolumeProperty> volumeProperty =
-//		vtkSmartPointer<vtkVolumeProperty>::New();
-//	volumeProperty->ShadeOff();
-//	volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
-//
-//	vtkSmartPointer<vtkPiecewiseFunction> compositeOpacity =
-//		vtkSmartPointer<vtkPiecewiseFunction>::New();
-//	compositeOpacity->AddPoint(0.0, 0.0);
-//	compositeOpacity->AddPoint(80.0, 1.0);
-//	compositeOpacity->AddPoint(80.1, 0.0);
-//	compositeOpacity->AddPoint(255.0, 0.0);
-//	volumeProperty->SetScalarOpacity(compositeOpacity); // composite first.
-//
-//	vtkSmartPointer<vtkColorTransferFunction> color =
-//		vtkSmartPointer<vtkColorTransferFunction>::New();
-//	color->AddRGBPoint(0.0, 0.0, 0.0, 1.0);
-//	color->AddRGBPoint(40.0, 1.0, 0.0, 0.0);
-//	color->AddRGBPoint(255.0, 1.0, 1.0, 1.0);
-//	volumeProperty->SetColor(color);
-//
-//	vtkSmartPointer<vtkVolume> volume =
-//		vtkSmartPointer<vtkVolume>::New();
-//	volume->SetMapper(volumeMapper);
-//	volume->SetProperty(volumeProperty);
-//	ren1->AddViewProp(volume);
-//	ren1->ResetCamera();
-//
-//	// Render composite. In default mode. For coverage.
-//	renWin->Render();
-//
-//	// 3D texture mode. For coverage.
-//#if !defined(VTK_LEGACY_REMOVE)
-//	volumeMapper->SetRequestedRenderModeToRayCastAndTexture();
-//#endif // VTK_LEGACY_REMOVE
-//	renWin->Render();
-//
-//	// Software mode, for coverage. It also makes sure we will get the same
-//	// regression image on all platforms.
-//	volumeMapper->SetRequestedRenderModeToRayCast();
-//	renWin->Render();
-//
-//	iren->Start();
-//
-//	return EXIT_SUCCESS;
-//}
-//
-//#include <vtkEarthSource.h>
-//#include <vtkPolyData.h>
-//#include <vtkSmartPointer.h>
-//#include <vtkPolyDataMapper.h>
-//#include <vtkActor.h>
-//#include <vtkRenderWindow.h>
-//#include <vtkRenderer.h>
-//#include <vtkRenderWindowInteractor.h>
-//
-//int vtkTest3()
-//{
-//
-//	//Create a sphere
-//	vtkSmartPointer<vtkEarthSource> earthSource = vtkSmartPointer<vtkEarthSource>::New();
-//	earthSource->OutlineOff();
-//	earthSource->Update();
-//
-//	//Create a mapper and actor
-//	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-//	mapper->SetInputConnection(earthSource->GetOutputPort());
-//
-//	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
-//	actor->SetMapper(mapper);
-//
-//	//Create a renderer, render window, and interactor
-//	vtkSmartPointer<vtkRenderer> renderer = vtkSmartPointer<vtkRenderer>::New();
-//	vtkSmartPointer<vtkRenderWindow> renderWindow = vtkSmartPointer<vtkRenderWindow>::New();
-//	renderWindow->AddRenderer(renderer);
-//	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = vtkSmartPointer<vtkRenderWindowInteractor>::New();
-//	renderWindowInteractor->SetRenderWindow(renderWindow);
-//
-//	//Add the actor to the scene
-//	renderer->AddActor(actor);
-//	renderer->SetBackground(1, 1, 1); // Background color white
-//
-//									  //Render and interact
-//	renderWindow->Render();
-//	renderWindowInteractor->Start();
-//
-//	return EXIT_SUCCESS;
-//}
-//
 #include <vtkOBJReader.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
@@ -588,128 +362,82 @@ bool guard = true;
 #include "vtkImageCast.h"
 #include "vtkCamera.h"
 
+
+//#include "vtk3DSImporter.h"
+#include <vtkDataSet.h>
+#include <vtkPolyData.h>
+#include <vtkSmartPointer.h>
+
 int vtkTest4(std::string filePath)
 {
 	// Parse command line arguments
 	
 
-	std::string filename = filePath + ".obj";
-	std::string filenameMTL = filePath + ".mtl";
-	//vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
-	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
-
-	reader->SetFileName(filename.c_str());
-	//reader->SetFileNameMTL(filenameMTL.c_str());
-	reader->Update();
-
+	
+	//importer->Update();
+	//reader->Update();
 	//vtkSmartPointer<vtkTexture> colorTexture = vtkSmartPointer<vtkTexture>::New();
 	//colorTexture->SetInputConnection(reader->GetOutputPort());
 	//colorTexture->InterpolateOn();
 
 	// Visualize
-	vtkSmartPointer<vtkPolyDataMapper> mapper =
+	/*vtkSmartPointer<vtkPolyDataMapper> mapper =
 		vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapper->SetInputConnection(reader->GetOutputPort());
 
 	vtkSmartPointer<vtkActor> actor =
 		vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper(mapper);
-	
+	*/
 
 	//actor->SetTexture(colorTexture);
 	
 	vtkSmartPointer<vtkRenderer> renderer =
 		vtkSmartPointer<vtkRenderer>::New();
-	renderer->AddActor(actor);
-	renderer->SetBackground(.3, .6, .3); // Background color green
+	//renderer->AddActor(actor);
+	//renderer->SetBackground(.3, .6, .3); // Background color green
 
 	vtkSmartPointer<vtkRenderWindow> renderWindow =
 		vtkSmartPointer<vtkRenderWindow>::New();
+	
 	renderWindow->AddRenderer(renderer);
 
 	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
 		vtkSmartPointer<vtkRenderWindowInteractor>::New();
 	renderWindowInteractor->SetRenderWindow(renderWindow);
+	//renderWindowInteractor->SetRenderWindow(importer->GetRenderWindow());
 
-	renderWindowInteractor->Start();
+	std::string filename = filePath + "sibenik.obj";
+	std::string filenameMTL = filePath + "sibenik.mtl";
+	vtkSmartPointer<vtkOBJImporter> importer = vtkSmartPointer<vtkOBJImporter>::New();
 
-	return EXIT_SUCCESS;
-}
+	importer->SetFileName(filename.c_str());
+	importer->SetFileNameMTL(filenameMTL.c_str());
+	importer->SetTexturePath(filePath.c_str());
+	importer->Read();
+	importer->SetRenderWindow(renderWindow);
+	importer->Update();
 
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
-#include <vtkSphereSource.h>
-#include <vtkInteractorStyleTrackballCamera.h>
+	//std::string filename = filePath;
+	//vtkSmartPointer<vtkVRMLImporter> importer = vtkSmartPointer<vtkVRMLImporter>::New();
+	//importer->SetFileName(filename.c_str());
+	//importer->SetRenderWindow(renderWindow);
+	//importer->Update();
 
-int vtkTest5()
-{
-	// Sphere 1
-	vtkSmartPointer<vtkSphereSource> sphereSource1 =
-		vtkSmartPointer<vtkSphereSource>::New();
-	sphereSource1->SetCenter(0.0, 0.0, 0.0);
-	sphereSource1->SetRadius(4.0);
-	sphereSource1->Update();
+	//std::string filename = filePath;
+	//vtkSmartPointer<vtk3DSImporter> importer = vtkSmartPointer<vtk3DSImporter>::New();
+	//importer->SetFileName(filename.c_str());
+	//importer->SetRenderWindow(renderWindow);
+	//importer->Update();
 
-	vtkSmartPointer<vtkPolyDataMapper> mapper1 =
-		vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper1->SetInputConnection(sphereSource1->GetOutputPort());
-
-	vtkSmartPointer<vtkActor> actor1 =
-		vtkSmartPointer<vtkActor>::New();
-	actor1->SetMapper(mapper1);
-
-	// Sphere 2
-	vtkSmartPointer<vtkSphereSource> sphereSource2 =
-		vtkSmartPointer<vtkSphereSource>::New();
-	sphereSource2->SetCenter(10.0, 0.0, 0.0);
-	sphereSource2->SetRadius(3.0);
-	sphereSource2->Update();
-
-	// Create a mapper
-	vtkSmartPointer<vtkPolyDataMapper> mapper2 =
-		vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper2->SetInputConnection(sphereSource2->GetOutputPort());
-
-	// Create an actor
-	vtkSmartPointer<vtkActor> actor2 =
-		vtkSmartPointer<vtkActor>::New();
-	actor2->SetMapper(mapper2);
-
-	// A renderer and render window
-	vtkSmartPointer<vtkRenderer> renderer =
-		vtkSmartPointer<vtkRenderer>::New();
-	vtkSmartPointer<vtkRenderWindow> renderWindow =
-		vtkSmartPointer<vtkRenderWindow>::New();
-	renderWindow->AddRenderer(renderer);
-
-	// An interactor
-	vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
-		vtkSmartPointer<vtkRenderWindowInteractor>::New();
-	renderWindowInteractor->SetRenderWindow(renderWindow);
-
-	// Add the actors to the scene
-	renderer->AddActor(actor1);
-	renderer->AddActor(actor2);
-	renderer->SetBackground(1, 1, 1); // Background color white
-
-									  // Render an image (lights and cameras are created automatically)
+	
 	renderWindow->Render();
-
-	vtkSmartPointer<vtkInteractorStyleTrackballCamera> style =
-		vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
-
-	renderWindowInteractor->SetInteractorStyle(style);
-
-	// Begin mouse interaction
 	renderWindowInteractor->Start();
 
 	return EXIT_SUCCESS;
 }
+
+
 
 #include <vtkPolyDataMapper.h>
 #include <vtkActor.h>
@@ -767,7 +495,7 @@ int vtkTest6()
 	windowToImageFilter->SetInput(renderWindow);
 	windowToImageFilter->Update();
 	
-	//windowToImageFilter->GetOutput();
+	windowToImageFilter->GetOutput();
 
 	vtkSmartPointer<vtkPNGWriter> writer =
 		vtkSmartPointer<vtkPNGWriter>::New();
@@ -778,10 +506,140 @@ int vtkTest6()
 	return EXIT_SUCCESS;
 }
 
+#include <vtkSphereSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkSmartPointer.h>
+#include <vtkCamera.h>
+#include <vtkPlanes.h>
+#include <vtkMapper.h>
+#include <vtkCameraActor.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
+#include <opencv2/core/core.hpp>
+ 
+int vtkTestC(std::string filePath)
+{
+
+
+	std::string filename = filePath + ".obj";
+	std::string filenameMtl = filePath + ".mtl";
+	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
+
+	vtkSmartPointer<vtkOBJImporter> importer = vtkSmartPointer<vtkOBJImporter>::New();
+
+	importer->SetFileName(filename.c_str());
+	importer->SetFileNameMTL(filenameMtl.c_str());
+
+	reader->SetFileName(filename.c_str());
+	reader->Update();
+	
+	// Visualize
+	vtkSmartPointer<vtkPolyDataMapper> mapper =
+		vtkSmartPointer<vtkPolyDataMapper>::New();
+	mapper->SetInputConnection(reader->GetOutputPort());
+
+	vtkSmartPointer<vtkActor> actor =
+		vtkSmartPointer<vtkActor>::New();
+	actor->SetMapper(mapper);
+	
+  // Camera
+  vtkSmartPointer<vtkCamera> camera = 
+    vtkSmartPointer<vtkCamera>::New();
+
+  vtkSmartPointer<vtkCameraActor> cameraActor = 
+    vtkSmartPointer<vtkCameraActor>::New();
+  cameraActor->SetCamera(camera);
+ 
+  // (Xmin,Xmax,Ymin,Ymax,Zmin,Zmax).
+  double* bounds = new double[6];
+  bounds = cameraActor->GetBounds();
+  
+  std::cout << "bounds: " << bounds[0] << " " << bounds[1] << " " << bounds[2] << " " << 
+      bounds[3] << " " << bounds[4] << " " << bounds[5] << std::endl;
+ 
+  // Visualize
+  vtkSmartPointer<vtkRenderer> renderer = 
+    vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow = 
+    vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->SetOffScreenRendering(1);
+  renderWindow->AddRenderer(renderer);
+ 
+  //vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = 
+  //  vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  //renderWindowInteractor->SetRenderWindow(renderWindow);
+ 
+  actor->SetScale(100);
+  renderer->AddActor(actor);
+  //renderer->AddActor(cameraActor);
+  renderer->SetActiveCamera(camera);
+  //vtkProp3D* center = actor->GetCenter();
+  double *a = actor->GetCenter();
+  double *o = actor->GetOrientation();
+  std::cout << *(a) << " " << *(a+1) << " " << *(a+2) << " " <<  "\n" << *(o) << " " << *(o + 1) << " " << *(o + 2) << "\n";
+  //cameraActor->SetOrigin(actor->GetCenter());
+  camera->SetPosition(*(a), *(a + 1), *(a + 2) + 300);
+  //camera->SetFocalPoint(*(o), *(o + 1) + 100, -*(o + 2));
+  camera->SetFocalPoint(*(a), *(a + 1), *(a + 2));
+  //camera->ParallelProjectionOn();
+  //camera->SetParallelScale(100);
+
+  //actor->GetOrientation();
+  //cameraActor->SetOrigin(0,0,-100);
+  
+
+
+  renderer->SetBackground(.3, .6, .3); // Background color white
+
+  renderWindow->Render();
+  namedWindow("window", WINDOW_AUTOSIZE);
+
+  for (int i = 300; i < 1000; i += 100) {
+	  camera->SetPosition(*(a), *(a + 1), *(a + 2) + i);
+
+	  vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+		  vtkSmartPointer<vtkWindowToImageFilter>::New();
+	  windowToImageFilter->SetInput(renderWindow);
+	  windowToImageFilter->Update();
+
+	  vtkImageData* image = windowToImageFilter->GetOutput();
+
+	  const int numComponents = image->GetNumberOfScalarComponents(); // 3 
+
+	  //Construct the OpenCv Mat 
+	  int dims[3];
+	  image->GetDimensions(dims);
+	  cv::Mat openCVImage(dims[1], dims[0], CV_8UC3, image->GetScalarPointer()); // Unsigned int, 4 channels 
+
+	  cvtColor(openCVImage, openCVImage, CV_BGRA2GRAY);
+
+	  // Flip because of different origins between vtk and OpenCV 
+	  cv::flip(openCVImage, openCVImage, 0);
+
+	  imshow("window", openCVImage);
+	  //resizeWindow("window", 500, 500);
+	  //moveWindow("window", 0, 0);
+
+	  waitKey(1000);
+  }
+  destroyWindow("window");
+
+ return EXIT_SUCCESS;
+}
+
+
 void PT::test1()
 {
 	//vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
-	vtkTest6();
+	vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\");
+	//vtkTest6();
+	//vtkTestC();
+	//vtkTestC("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
 	
 }
 
