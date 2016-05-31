@@ -111,233 +111,233 @@ bool protonect_shutdown = false;
 
 void PT::test2(int argc, char *argv[])
 {
-  std::string program_path(argv[0]);
-  std::cerr << "Environment variables: LOGFILE=<protonect.log>" << std::endl;
-  std::cerr << "Usage: " << program_path << " [gl | cl | cpu] [<device serial>] [-noviewer]" << std::endl;
-  size_t executable_name_idx = program_path.rfind("Master");
-
-  std::string binpath = "/";
-
-  if(executable_name_idx != std::string::npos)
-  {
-    binpath = program_path.substr(0, executable_name_idx);
-  }
-
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
-  // avoid flooing the very slow Windows console with debug messages
-  libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Info));
-#else
-  // create a console logger with debug level (default is console logger with info level)
-/// [logging]
-  libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
-/// [logging]
-#endif
-/// [file logging]
-  MyFileLogger *filelogger = new MyFileLogger(getenv("LOGFILE"));
-  if (filelogger->good())
-    libfreenect2::setGlobalLogger(filelogger);
-/// [file logging]
-
-/// [context]
-  libfreenect2::Freenect2 freenect2;
-  libfreenect2::Freenect2Device *dev = 0;
-  libfreenect2::PacketPipeline *pipeline = 0;
-/// [context]
-
-/// [discovery]
-  if(freenect2.enumerateDevices() == 0)
-  {
-    std::cout << "no device connected!" << std::endl;
-    return;
-  }
-
-  std::string serial = freenect2.getDefaultDeviceSerialNumber();
-/// [discovery]
-
-  bool viewer_enabled = true;
-
-  for(int argI = 1; argI < argc; ++argI)
-  {
-    const std::string arg(argv[argI]);
-
-    if(arg == "cpu")
-    {
-      if(!pipeline)
-/// [pipeline]
-        pipeline = new libfreenect2::CpuPacketPipeline();
-/// [pipeline]
-    }
-    else if(arg == "gl")
-    {
-#ifdef LIBFREENECT2_WITH_OPENGL_SUPPORT
-      if(!pipeline)
-        pipeline = new libfreenect2::OpenGLPacketPipeline();
-#else
-      std::cout << "OpenGL pipeline is not supported!" << std::endl;
-#endif
-    }
-    else if(arg == "cl")
-    {
-#ifdef LIBFREENECT2_WITH_OPENCL_SUPPORT
-      if(!pipeline)
-        pipeline = new libfreenect2::OpenCLPacketPipeline();
-#else
-      std::cout << "OpenCL pipeline is not supported!" << std::endl;
-#endif
-    }
-    else if(arg.find_first_not_of("0123456789") == std::string::npos) //check if parameter could be a serial number
-    {
-      serial = arg;
-    }
-    else if(arg == "-noviewer")
-    {
-      viewer_enabled = false;
-    }
-    else
-    {
-      std::cout << "Unknown argument: " << arg << std::endl;
-    }
-  }
-
-  if(pipeline)
-  {
-/// [open]
-    dev = freenect2.openDevice(serial, pipeline);
-/// [open]
-  }
-  else
-  {
-    dev = freenect2.openDevice(serial);
-  }
-
-  if(dev == 0)
-  {
-    std::cout << "failure opening device!" << std::endl;
-    return;
-  }
-
-  //signal(SIGINT,sigint_handler);
-  protonect_shutdown = false;
-
-/// [listeners]
-  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
-  libfreenect2::FrameMap frames;
-
-  dev->setColorFrameListener(&listener);
-  dev->setIrAndDepthFrameListener(&listener);
-/// [listeners]
-
-/// [start]
-  dev->start();
-
-  std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
-  std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
-/// [start]
-
-/// [registration setup]
-  libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
-  libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
-/// [registration setup]
-
-  size_t framecount = 0;
-//#ifdef EXAMPLES_WITH_OPENGL_SUPPORT
-  // viewer_enabled = false;
-  // SimpleViewer viewer; 
-  SimpleViewer viewer;
-  if (viewer_enabled)
-    viewer.initialize();
+//  std::string program_path(argv[0]);
+//  std::cerr << "Environment variables: LOGFILE=<protonect.log>" << std::endl;
+//  std::cerr << "Usage: " << program_path << " [gl | cl | cpu] [<device serial>] [-noviewer]" << std::endl;
+//  size_t executable_name_idx = program_path.rfind("Master");
+//
+//  std::string binpath = "/";
+//
+//  if(executable_name_idx != std::string::npos)
+//  {
+//    binpath = program_path.substr(0, executable_name_idx);
+//  }
+//
+//#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
+//  // avoid flooing the very slow Windows console with debug messages
+//  libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Info));
 //#else
-  //viewer_enabled = false;
+//  // create a console logger with debug level (default is console logger with info level)
+///// [logging]
+//  libfreenect2::setGlobalLogger(libfreenect2::createConsoleLogger(libfreenect2::Logger::Debug));
+///// [logging]
 //#endif
-
-bool guard = true;
-/// [loop start]
-  while(!protonect_shutdown)
-  {
-    listener.waitForNewFrame(frames);
-    libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
-    libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
-    libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
-/// [loop start]
-
-/// [registration]
-    registration->apply(rgb, depth, &undistorted, &registered);
-/// [registration]
-
-    if(guard)
-    {
-      // Mat temp = frameToMat("depth", depth);
-      // showMat(temp);
-      // temp = frameToMat("registered", &undistorted);
-      // showMat(temp);
-      // temp = frameToMat("registered", &registered);
-      // showMat(temp);
-      // std::cout<<temp<<"\n";
-    //   vector<Point2f> output;
-    //   Size patternsize(5,4);
-    //   Mat image2 = frameToMat("rgb", rgb);
-    //   Mat image;
-    //   cvtColor(image2, image, CV_BGR2GRAY);
-    //   printf("/////////////////////////////////////////////////////////////////////LOOKING?????????????????????\n");
-    //   bool patternfound = findChessboardCorners( image, patternsize, output,
-    // CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE
-    //     + CALIB_CB_FAST_CHECK);
-
-    //   if(patternfound){
-    //   printf("/////////////////////////////////////////////////////////////////////found\n");
-    //   // return true;
-    //   cornerSubPix(image, output, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
-    
-
-    //   drawChessboardCorners(image, patternsize, Mat(output), patternfound);
-
-    //   showMat(image);
-
-
-    // } else {
-    //   printf("///////////////////////////////////////////////////////////////NOT found\n");
-    //   // showMat(image);
-    //   // return false;
-    // }
-
-
-      guard = false;
-    }
-
-    
-
-    framecount++;
-    if (!viewer_enabled)
-    {
-      if (framecount % 100 == 0)
-        std::cout << "The viewer is turned off. Received " << framecount << " frames. Ctrl-C to stop." << std::endl;
-      listener.release(frames);
-      continue;
-    }
-
-#ifdef EXAMPLES_WITH_OPENGL_SUPPORT
-    viewer.addFrame("RGB", rgb);
-    viewer.addFrame("ir", ir);
-    viewer.addFrame("depth", depth);
-    viewer.addFrame("registered", &registered);
-
-    protonect_shutdown = protonect_shutdown || viewer.render();
-#endif
-
-/// [loop end]
-    listener.release(frames);
-    /** libfreenect2::this_thread::sleep_for(libfreenect2::chrono::milliseconds(100)); */
-  }
-/// [loop end]
-
-  // TODO: restarting ir stream doesn't work!
-  // TODO: bad things will happen, if frame listeners are freed before dev->stop() :(
-/// [stop]
-  dev->stop();
-  dev->close();
-/// [stop]
-
-  delete registration;
+///// [file logging]
+//  MyFileLogger *filelogger = new MyFileLogger(getenv("LOGFILE"));
+//  if (filelogger->good())
+//    libfreenect2::setGlobalLogger(filelogger);
+///// [file logging]
+//
+///// [context]
+//  libfreenect2::Freenect2 freenect2;
+//  libfreenect2::Freenect2Device *dev = 0;
+//  libfreenect2::PacketPipeline *pipeline = 0;
+///// [context]
+//
+///// [discovery]
+//  if(freenect2.enumerateDevices() == 0)
+//  {
+//    std::cout << "no device connected!" << std::endl;
+//    return;
+//  }
+//
+//  std::string serial = freenect2.getDefaultDeviceSerialNumber();
+///// [discovery]
+//
+//  bool viewer_enabled = true;
+//
+//  for(int argI = 1; argI < argc; ++argI)
+//  {
+//    const std::string arg(argv[argI]);
+//
+//    if(arg == "cpu")
+//    {
+//      if(!pipeline)
+///// [pipeline]
+//        pipeline = new libfreenect2::CpuPacketPipeline();
+///// [pipeline]
+//    }
+//    else if(arg == "gl")
+//    {
+//#ifdef LIBFREENECT2_WITH_OPENGL_SUPPORT
+//      if(!pipeline)
+//        pipeline = new libfreenect2::OpenGLPacketPipeline();
+//#else
+//      std::cout << "OpenGL pipeline is not supported!" << std::endl;
+//#endif
+//    }
+//    else if(arg == "cl")
+//    {
+//#ifdef LIBFREENECT2_WITH_OPENCL_SUPPORT
+//      if(!pipeline)
+//        pipeline = new libfreenect2::OpenCLPacketPipeline();
+//#else
+//      std::cout << "OpenCL pipeline is not supported!" << std::endl;
+//#endif
+//    }
+//    else if(arg.find_first_not_of("0123456789") == std::string::npos) //check if parameter could be a serial number
+//    {
+//      serial = arg;
+//    }
+//    else if(arg == "-noviewer")
+//    {
+//      viewer_enabled = false;
+//    }
+//    else
+//    {
+//      std::cout << "Unknown argument: " << arg << std::endl;
+//    }
+//  }
+//
+//  if(pipeline)
+//  {
+///// [open]
+//    dev = freenect2.openDevice(serial, pipeline);
+///// [open]
+//  }
+//  else
+//  {
+//    dev = freenect2.openDevice(serial);
+//  }
+//
+//  if(dev == 0)
+//  {
+//    std::cout << "failure opening device!" << std::endl;
+//    return;
+//  }
+//
+//  //signal(SIGINT,sigint_handler);
+//  protonect_shutdown = false;
+//
+///// [listeners]
+//  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+//  libfreenect2::FrameMap frames;
+//
+//  dev->setColorFrameListener(&listener);
+//  dev->setIrAndDepthFrameListener(&listener);
+///// [listeners]
+//
+///// [start]
+//  dev->start();
+//
+//  std::cout << "device serial: " << dev->getSerialNumber() << std::endl;
+//  std::cout << "device firmware: " << dev->getFirmwareVersion() << std::endl;
+///// [start]
+//
+///// [registration setup]
+//  libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
+//  libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
+///// [registration setup]
+//
+//  size_t framecount = 0;
+////#ifdef EXAMPLES_WITH_OPENGL_SUPPORT
+//  // viewer_enabled = false;
+//  // SimpleViewer viewer; 
+//  SimpleViewer viewer;
+//  if (viewer_enabled)
+//    viewer.initialize();
+////#else
+//  //viewer_enabled = false;
+////#endif
+//
+//bool guard = true;
+///// [loop start]
+//  while(!protonect_shutdown)
+//  {
+//    listener.waitForNewFrame(frames);
+//    libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
+//    libfreenect2::Frame *ir = frames[libfreenect2::Frame::Ir];
+//    libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
+///// [loop start]
+//
+///// [registration]
+//    registration->apply(rgb, depth, &undistorted, &registered);
+///// [registration]
+//
+//    if(guard)
+//    {
+//      // Mat temp = frameToMat("depth", depth);
+//      // showMat(temp);
+//      // temp = frameToMat("registered", &undistorted);
+//      // showMat(temp);
+//      // temp = frameToMat("registered", &registered);
+//      // showMat(temp);
+//      // std::cout<<temp<<"\n";
+//    //   vector<Point2f> output;
+//    //   Size patternsize(5,4);
+//    //   Mat image2 = frameToMat("rgb", rgb);
+//    //   Mat image;
+//    //   cvtColor(image2, image, CV_BGR2GRAY);
+//    //   printf("/////////////////////////////////////////////////////////////////////LOOKING?????????????????????\n");
+//    //   bool patternfound = findChessboardCorners( image, patternsize, output,
+//    // CALIB_CB_ADAPTIVE_THRESH + CALIB_CB_NORMALIZE_IMAGE
+//    //     + CALIB_CB_FAST_CHECK);
+//
+//    //   if(patternfound){
+//    //   printf("/////////////////////////////////////////////////////////////////////found\n");
+//    //   // return true;
+//    //   cornerSubPix(image, output, Size(11, 11), Size(-1, -1), TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+//    
+//
+//    //   drawChessboardCorners(image, patternsize, Mat(output), patternfound);
+//
+//    //   showMat(image);
+//
+//
+//    // } else {
+//    //   printf("///////////////////////////////////////////////////////////////NOT found\n");
+//    //   // showMat(image);
+//    //   // return false;
+//    // }
+//
+//
+//      guard = false;
+//    }
+//
+//    
+//
+//    framecount++;
+//    if (!viewer_enabled)
+//    {
+//      if (framecount % 100 == 0)
+//        std::cout << "The viewer is turned off. Received " << framecount << " frames. Ctrl-C to stop." << std::endl;
+//      listener.release(frames);
+//      continue;
+//    }
+//
+//#ifdef EXAMPLES_WITH_OPENGL_SUPPORT
+//    viewer.addFrame("RGB", rgb);
+//    viewer.addFrame("ir", ir);
+//    viewer.addFrame("depth", depth);
+//    viewer.addFrame("registered", &registered);
+//
+//    protonect_shutdown = protonect_shutdown || viewer.render();
+//#endif
+//
+///// [loop end]
+//    listener.release(frames);
+//    /** libfreenect2::this_thread::sleep_for(libfreenect2::chrono::milliseconds(100)); */
+//  }
+///// [loop end]
+//
+//  // TODO: restarting ir stream doesn't work!
+//  // TODO: bad things will happen, if frame listeners are freed before dev->stop() :(
+///// [stop]
+//  dev->stop();
+//  dev->close();
+///// [stop]
+//
+//  delete registration;
 }
 
 
@@ -439,69 +439,83 @@ int vtkTest4(std::string filePath)
 
 
 
-#include <vtkPolyDataMapper.h>
-#include <vtkActor.h>
-#include <vtkRenderWindow.h>
-#include <vtkRenderer.h>
-#include <vtkPolyData.h>
-#include <vtkSmartPointer.h>
-#include <vtkSphereSource.h>
+
 #include <vtkWindowToImageFilter.h>
 #include <vtkPNGWriter.h>
 #include <vtkGraphicsFactory.h>
-//#include <vtkImagingFactory.h>
 
-int vtkTest6()
+int vtkTest6(std::string filePath)
 {
-	// Setup offscreen rendering
-	vtkSmartPointer<vtkGraphicsFactory> graphics_factory =
-		vtkSmartPointer<vtkGraphicsFactory>::New();
-	graphics_factory->SetOffScreenOnlyMode(1);
-	graphics_factory->SetUseMesaClasses(1);
+	vtkObject::GlobalWarningDisplayOff();
 
-	//vtkSmartPointer<vtkImagingFactory> imaging_factory =
-	//	vtkSmartPointer<vtkImagingFactory>::New();
-	//imaging_factory->SetUseMesaClasses(1);
-
-	// Create a sphere
-	vtkSmartPointer<vtkSphereSource> sphereSource =
-		vtkSmartPointer<vtkSphereSource>::New();
-
-	// Create a mapper and actor
-	vtkSmartPointer<vtkPolyDataMapper> mapper =
-		vtkSmartPointer<vtkPolyDataMapper>::New();
-	mapper->SetInputConnection(sphereSource->GetOutputPort());
-
-	vtkSmartPointer<vtkActor> actor =
-		vtkSmartPointer<vtkActor>::New();
-	actor->SetMapper(mapper);
-
-	// A renderer and render window
 	vtkSmartPointer<vtkRenderer> renderer =
 		vtkSmartPointer<vtkRenderer>::New();
+	//renderer->SetBackground(.3, .6, .3); // Background color green
+
+	vtkSmartPointer<vtkCamera> camera =
+		vtkSmartPointer<vtkCamera>::New();
+
+
 	vtkSmartPointer<vtkRenderWindow> renderWindow =
 		vtkSmartPointer<vtkRenderWindow>::New();
+
 	renderWindow->SetOffScreenRendering(1);
 	renderWindow->AddRenderer(renderer);
+	renderer->SetActiveCamera(camera);
 
-	// Add the actors to the scene
-	renderer->AddActor(actor);
-	renderer->SetBackground(.1, .1, .1); // Background color white
+	//vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+	//	vtkSmartPointer<vtkRenderWindowInteractor>::New();
+	//renderWindowInteractor->SetRenderWindow(renderWindow);
+	//renderWindowInteractor->SetRenderWindow(importer->GetRenderWindow());
+
+	std::string filename = filePath + "sibenik.obj";
+	std::string filenameMTL = filePath + "sibenik.mtl";
+	vtkSmartPointer<vtkOBJImporter> importer = vtkSmartPointer<vtkOBJImporter>::New();
+
+	importer->SetFileName(filename.c_str());
+	importer->SetFileNameMTL(filenameMTL.c_str());
+	importer->SetTexturePath(filePath.c_str());
+	importer->Read();
+	importer->SetRenderWindow(renderWindow);
+	importer->Update();
+	
 
 	renderWindow->Render();
-	//renderWindow->GetOffScreenRendering();
-	vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
-		vtkSmartPointer<vtkWindowToImageFilter>::New();
-	windowToImageFilter->SetInput(renderWindow);
-	windowToImageFilter->Update();
-	
-	windowToImageFilter->GetOutput();
+	//renderWindowInteractor->Start();
+	renderer->SetBackground(.3, .6, .3);
+	double *a = camera->GetPosition();
+	namedWindow("window", WINDOW_AUTOSIZE);
 
-	vtkSmartPointer<vtkPNGWriter> writer =
-		vtkSmartPointer<vtkPNGWriter>::New();
-	writer->SetFileName("screenshot.png");
-	writer->SetInputConnection(windowToImageFilter->GetOutputPort());
-	writer->Write();
+	for (int i = 1; i < 10; i += 1) {
+		camera->SetPosition(*(a), *(a + 1), *(a + 2) + i);
+
+		vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
+			vtkSmartPointer<vtkWindowToImageFilter>::New();
+		windowToImageFilter->SetInput(renderWindow);
+		windowToImageFilter->Update();
+
+		vtkImageData* image = windowToImageFilter->GetOutput();
+
+		const int numComponents = image->GetNumberOfScalarComponents(); // 3 
+
+																		//Construct the OpenCv Mat 
+		int dims[3];
+		image->GetDimensions(dims);
+		cv::Mat openCVImage(dims[1], dims[0], CV_8UC3, image->GetScalarPointer()); // Unsigned int, 4 channels 
+
+		//cvtColor(openCVImage, openCVImage, CV_BGRA2GRAY);
+
+		// Flip because of different origins between vtk and OpenCV 
+		cv::flip(openCVImage, openCVImage, 0);
+
+		imshow("window", openCVImage);
+		//resizeWindow("window", 500, 500);
+		//moveWindow("window", 0, 0);
+
+		waitKey(500);
+	}
+	destroyWindow("window");
+
 
 	return EXIT_SUCCESS;
 }
@@ -526,15 +540,18 @@ int vtkTestC(std::string filePath)
 {
 
 
-	std::string filename = filePath + ".obj";
-	std::string filenameMtl = filePath + ".mtl";
+	//std::string filename = filePath + ".obj";
+	//std::string filenameMtl = filePath + ".mtl";
+
+	std::string filename = filePath + "sibenik.obj";
+	std::string filenameMtl = filePath + "sibenik.mtl";
 	vtkSmartPointer<vtkOBJReader> reader = vtkSmartPointer<vtkOBJReader>::New();
 
 	vtkSmartPointer<vtkOBJImporter> importer = vtkSmartPointer<vtkOBJImporter>::New();
 
 	importer->SetFileName(filename.c_str());
 	importer->SetFileNameMTL(filenameMtl.c_str());
-
+	importer->SetTexturePath(filePath.c_str());
 	reader->SetFileName(filename.c_str());
 	reader->Update();
 	
@@ -636,9 +653,9 @@ int vtkTestC(std::string filePath)
 void PT::test1()
 {
 	//vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
-	vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\");
-	//vtkTest6();
-	//vtkTestC();
+	//vtkTest4("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\");
+	vtkTest6("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\");
+	//vtkTestC("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\");
 	//vtkTestC("C:\\Users\\Adam\\Desktop\\volumetric data\\cornell-box\\CornellBox-Original");
 	
 }

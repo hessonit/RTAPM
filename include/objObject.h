@@ -1,7 +1,13 @@
 
 #include <iostream>
 #include <vtkSmartPointer.h>
-#include <vtkOBJReader.h>
+#include <vtkOBJImporter.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkCamera.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkWindowToImageFilter.h>
 #include <string>
 
 
@@ -13,13 +19,19 @@ using namespace std;
 class objObject
 {
 public:
-	objObject(string _path);
+	objObject(string _path, string _name);
 	//~objObject();
-	void readData();
+	void loadData();
+	void render();
 
 private:
 	string path;
-	vtkSmartPointer<vtkOBJReader> reader;
+	string name;
+	vtkSmartPointer<vtkOBJImporter> reader;
+	vtkSmartPointer<vtkRenderer> renderer;
+	vtkSmartPointer<vtkRenderWindow> renderWindow;
+	vtkSmartPointer<vtkCamera> camera;
+	vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter;
 
 };
 
