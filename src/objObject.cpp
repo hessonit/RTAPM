@@ -53,3 +53,14 @@ void objObject::render()
 	cv::flip(openCVImage, openCVImage, 0);
 
 }
+
+void objObject::setCameraOrientation(double x, double y, double z)
+{
+	camera->SetViewUp(x, y, z);
+}
+
+void objObject::moveCameraBy(double x, double y, double z)
+{
+	double *pos = camera->GetPosition();
+	camera->SetPosition((*pos) + x, *(pos + 1) + y, *(pos + 2) + z);
+}

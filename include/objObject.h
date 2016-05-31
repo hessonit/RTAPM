@@ -23,6 +23,8 @@ public:
 	//~objObject();
 	void loadData();
 	void render();
+	void setCameraOrientation(double x, double y, double z);
+	void moveCameraBy(double x, double y, double z);
 
 private:
 	string path;
