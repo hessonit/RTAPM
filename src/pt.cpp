@@ -485,10 +485,11 @@ int vtkTest6(std::string filePath)
 	renderer->SetBackground(.3, .6, .3);
 	double *a = camera->GetPosition();
 	namedWindow("window", WINDOW_AUTOSIZE);
-
+	
+	
 	for (int i = 1; i < 10; i += 1) {
+		
 		camera->SetPosition(*(a), *(a + 1), *(a + 2) + i);
-
 		vtkSmartPointer<vtkWindowToImageFilter> windowToImageFilter =
 			vtkSmartPointer<vtkWindowToImageFilter>::New();
 		windowToImageFilter->SetInput(renderWindow);

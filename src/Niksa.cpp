@@ -25,6 +25,7 @@
 #include "CTObject.h"
 #include "util.h"
 #include "Projector.h"
+#include "objObject.h"
 
 
 //#include<OGRE\Ogre.h>
@@ -337,7 +338,7 @@ if(tt == 1){
 	  Projector *projector = new Projector();
 	  projector->setKinect(&listener, dev);
 	  projector->setMatrices(mt, mr, cam, pro);
-		projector->showRectangle(gpuView>0);
+	  projector->showRectangle(gpuView>0);
 	  dev->stop();
 	  dev->close();
   }
@@ -449,10 +450,66 @@ if(tt == 1){
 	  dev->setColorFrameListener(&listener);
 	  dev->setIrAndDepthFrameListener(&listener);
 	  dev->start();
+	  Projector *projector = new Projector();
+	  projector->setKinect(&listener, dev);
+	  projector->setMatrices(mt, mr, cam, pro);
+	  projector->reproject(gpuView>0);
+	  dev->stop();
+	  dev->close();
+  }
+
+  if (test == 8) {
+	  objObject obj("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\", "sibenik");
+	  obj.loadData();
+	  cv::namedWindow("objTest", CV_WINDOW_NORMAL);
+	  cv::moveWindow("objTest", 0, 0);
+	  for (int i = 0; i < 10; i++) {
+		  //obj.moveCameraBy(0, 0, 1);
+		  obj.rotateCameraBy(0, 0, 10);
+		  cv::Mat im = obj.render();
+		  cv::imshow("objTest", im);
+		  cv::waitKey(300);
+	  }
+	  cv::destroyWindow("objTest");
+  }
+  if (test == 9)
+  {
+	  int gpuView = 0;
+	  std::cout << "CPU view(0) or GPU view(1)\n";
+	  std::cin >> gpuView;
+	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
+		  17.7872756163266,
+		  -6.798784049003872);
+
+	  cv::Mat mr = (cv::Mat1f(3, 1) << 2.178677563707194,
+		  2.096964130591053,
+		  0.1258202253438768);
+
+	  cv::Mat cam = (cv::Mat_<double>(3, 3) << 1053.314135376467, 0, 670.864138058805,
+		  0, 1059.961617203515, 291.5273582648912,
+		  0, 0, 1);
+
+	  cv::Mat pro = (cv::Mat1f(5, 1) << 0, 0, 0, 0, 0);
+	  libfreenect2::Freenect2 freenect2;
+	  libfreenect2::Freenect2Device *dev = 0;
+	  libfreenect2::PacketPipeline *pipeline = 0;
+	  libfreenect2::setGlobalLogger(NULL);
+	  if (freenect2.enumerateDevices() == 0) {
+		  std::cout << "no device connected!" << std::endl;
+		  return 0;
+	  }
+	  std::string serial = freenect2.getDefaultDeviceSerialNumber();
+	  if (!pipeline)
+		  pipeline = new libfreenect2::OpenGLPacketPipeline();
+	  dev = freenect2.openDevice(serial, pipeline);
+	  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+	  dev->setColorFrameListener(&listener);
+	  dev->setIrAndDepthFrameListener(&listener);
+	  dev->start();
 		  Projector *projector = new Projector();
 		  projector->setKinect(&listener, dev);
 		  projector->setMatrices(mt, mr, cam, pro);
-		  projector->reproject(gpuView>0);
+		  projector->objProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\", "sibenik", gpuView>0);
 	  dev->stop();
 	  dev->close();
   }
