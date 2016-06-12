@@ -35,6 +35,7 @@ private:
 	string path;
 	string name;
 	double *position;
+	cv::Vec3f prevOrient;
 	vtkSmartPointer<vtkOBJImporter> reader;
 	vtkSmartPointer<vtkRenderer> renderer;
 	vtkSmartPointer<vtkRenderWindow> renderWindow;

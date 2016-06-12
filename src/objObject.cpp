@@ -2,8 +2,6 @@
 #include "util.h"
 
 #include <vtkTransform.h>
-//#include <opencv2/opencv.hpp>
-//#include <opencv2/core/core.hpp>
 
 objObject::objObject(string _path, string _name)
 {
@@ -19,6 +17,7 @@ objObject::objObject(string _path, string _name)
 	renderer->SetActiveCamera(camera);
 	//windowToImageFilter->SetInput(renderWindow);
 	position = camera->GetPosition();
+	prevOrient = cv::Vec3f(0, 0, 0);
 }
 
 void objObject::loadData()
@@ -39,9 +38,9 @@ void objObject::loadData()
 	reader->SetRenderWindow(renderWindow);
 	reader->Read();
 	double *f = camera->GetFocalPoint();
-	std::cout << "FOCAL POINT: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
+	//std::cout << "FOCAL POINT: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
 	f = camera->GetViewUp();
-	std::cout << "VIEW UP: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
+	//std::cout << "VIEW UP: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
 }
 
 cv::Mat objObject::render()
@@ -62,13 +61,14 @@ cv::Mat objObject::render()
 
 void objObject::setCameraUp(double x, double y, double z)
 {
-	
+	//std::cout << "SET UP\n";
 	camera->SetViewUp(x, y, z);
 	
 }
 
 void objObject::moveCameraBy(double x, double y, double z)
 {
+	//std::cout << "MOVE CAMERA BY\n";
 	//double *pos = camera->GetPosition();
 	camera->SetPosition((*position) + x, *(position + 1) + y, *(position + 2) + z);
 }
@@ -87,46 +87,50 @@ void objObject::rotateCameraBy(double x, double y, double z)
 
 void objObject::setCamera(cv::Point3f center, cv::Vec3f orientation)
 {
+	for (int i = 0; i < 3; i++)
+		if ((int)(100 * orientation[i]) == -(int)(100 * prevOrient[i])) orientation[i] = -orientation[i];
+	for (int i = 0; i < 3; i++) {
+		if ((orientation[i]*prevOrient[i]) < 0 && abs(orientation[i])>0.5) orientation[i] = -orientation[i];
+	}
 	cv::Point3f oldCenter((*position), *(position + 1), *(position + 2));
 	double dist = cv::norm(oldCenter - center);
-	if (dist > 0.02) {
+	if (dist > 0.2) {
 		camera->SetPosition(center.x, center.y, center.z);
 	}
 
-	float scale = 2;
+	float scale = 0.018;
 	vtkSmartPointer<vtkTransform> transform = vtkSmartPointer<vtkTransform>::New();
 	transform->Identity();
 	transform->Scale(scale, scale, scale);
 	camera->ApplyTransform(transform);
 
-	double focus[3];
-	double viewup[3];
-	focus[0] = center.x - -cos(orientation[0])*sin(orientation[1]);
-	focus[1] = center.y - sin(orientation[0]);
-	focus[2] = center.z - cos(orientation[0])*cos(orientation[1]);
+	cv::Point3f focal;
+	float s = 360;
+	focal.x = orientation[0]*s;
+	focal.z = -100.0;// orientation[1] * s;
+	focal.y = (0.15 - orientation[1] )* s;
 
-	float s = 25;
-	focus[0] = orientation[0]*s;
-	focus[1] = orientation[2]*s;
-	focus[2] = orientation[1]*s;
+	double *foc = camera->GetFocalPoint();
+	cv::Point3f oldFocal((*foc), *(foc + 1), *(foc + 2));
+	cv::Point3f scaledFocal = focal * scale;
 
-	//viewup[0] = cos(orientation[1])*sin(orientation[2]) +
-	//	sin(orientation[1])*sin(orientation[2])*cos(orientation[2]);
-	//viewup[1] = cos(orientation[0])*cos(orientation[2]);
-	//viewup[2] = sin(orientation[1])*sin(orientation[2]) -
-	//	cos(orientation[1])*sin(orientation[0])*cos(orientation[2]);
-
-	////set the camera position and orientation
-	//cam->SetPosition(position);
-	//camera->SetViewUp(viewup);
-
-	//camera->SetFocalPoint(focus[0] + 30, focus[2] - 30, focus[1] + 15);
-	
-	camera->SetFocalPoint(-focus[0], focus[1], -focus[2]);
+	focal.x = (int)focal.x - (int)focal.x % 5;
+	focal.y = (int)focal.y - (int)focal.y % 5;
+	camera->SetFocalPoint(focal.x, focal.y, (int)focal.z);
 	double *f = camera->GetFocalPoint();
-	std::cout << "FOCAL POINT NEW: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
-	f = camera->GetViewUp();
-	std::cout << "VIEW UP NEW: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
+	
+	if (*(f)*scale*oldFocal.x<0 && abs(oldFocal.x - *(f)*scale > 1.0)) focal.x = -focal.x;
+	if (*(f + 1)*scale*oldFocal.y<0 && abs(oldFocal.y - *(f + 1)*scale > 2.0)) focal.y = -focal.y;
+
+
+	camera->SetFocalPoint(focal.x, focal.y, (int)focal.z);
+
+	f = camera->GetFocalPoint();
+	
+	//std::cout << "FOCAL POINT NEW: " << *(f)*scale << " " << *(f + 1)*scale << " " << *(f + 2)*scale << "\n";
+	//std::cout << "FOCAL POINT OLD: " << oldFocal.x << " " << oldFocal.y << " " << oldFocal.z << "\n";
+
+	prevOrient = orientation;
 
 
 }

@@ -361,7 +361,9 @@ if(tt == 1){
 	  dev->start();
 		  Projector *projector = new Projector();
 		  projector->setKinect(&listener, dev);
-		  projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\", 512, 512, 360);
+		  projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.", 256, 256, 106);
+		  //"C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain
+		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\", 512, 512, 360);
 	  dev->stop();
 	  dev->close();
   }

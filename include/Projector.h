@@ -22,7 +22,7 @@ public:
 	cv::Point3f center;
 	cv::Vec3f normal;
 	cv::Vec3f up;
-
+	static cv::Vec3f computeNormal(cv::Point3f a, cv::Point3f b, cv::Point3f c);
 
 };
 
@@ -35,6 +35,7 @@ public:
 	void setKinect(libfreenect2::SyncMultiFrameListener *listener, libfreenect2::Freenect2Device *dev);
 	void ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim);
 	void objProjection(std::string objPath, std::string objName, bool gpuView);
+	void objProjectionOffline(std::string objPath, std::string objName, bool gpuView);
 	void reproject(bool gpuView = false);
 	void showRectangle(bool gpuView = false);
 
@@ -45,6 +46,8 @@ private:
 	int findIndex(int x, int y);
 	//std::vector<cv::Point3f> findRectangle(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
 	PlaneData findRectangle(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
+	PlaneData findRectangleAt(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered, int startX, int startY);
+
 
 	std::vector<cv::Point2f> projectPoints(std::vector<cv::Point3f> in);
 

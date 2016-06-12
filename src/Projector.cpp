@@ -107,9 +107,10 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 	SimpleViewer viewer;
 	bool shutdown = false;
 	cv::Mat board(480, 640, CV_8UC4, cv::Scalar::all(255));
+	cv::Vec3f prevNormal(-1, -1, -1);
 	if (!gpuView) {
 		cv::namedWindow("reprojection", CV_WINDOW_NORMAL);
-		cv::moveWindow("reprojection", 0, 0);
+		cv::moveWindow("reprojection", 200, 200);
 		//setWindowProperty("reprojection", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 	}
 	else {
@@ -123,7 +124,6 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 	while (!shutdown)
 	{
 		board = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(255));
-		std::vector<cv::Point3f> wrldSrc;
 		std::vector<cv::Point3f> plnSrc;
 		if (!gpuView) cv::imshow("reprojection", board);
 		(_listener)->waitForNewFrame(frames);
@@ -132,32 +132,19 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 		registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
 
 		PlaneData pln = findRectangle(registration, &undistorted, &registered);
-		//obj.setCamera(pln.center, cv::Vec3f(0, 0, 0));
-		
+
 		if (pln.points.size() > 0) {
 			std::vector<cv::Point2f> projected = projectPoints(pln.points);
-			//pln.projectedPoints = projected;
 			cv::Mat cont = cv::Mat(480, 640, CV_8UC1, cv::Scalar::all(0));
 
-			for (int i = 0; i < 480; i++)
-				for (int j = 0; j < 640; j++)
-					indices[i][j] = -1;
-
-			cv::Point2d maxX(-1, 0);
-			cv::Point2d maxY(0, -1);
-			cv::Point2d minX(99999999, 0);
-			cv::Point2d minY(0, 99999999);
 			for (int i = 0; i < projected.size(); i++)
 			{
 				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
 
 					cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
 					ROI.setTo(cv::Scalar(250, 100, 100, 100));
-
 					cont.at<uchar>(static_cast<int>(480 - projected[i].x), static_cast<int>(projected[i].y), 0) = 255;
-					//std::cout << (int)(480 - projected[i].x) << " ";
-					//indices[(int)(480 - projected[i].x)][0] = 123;
-					indices[static_cast<int>(480 - projected[i].x)][static_cast<int>(projected[i].y)] = i;
+					plnSrc.push_back(pln.points[i]);
 				}
 			}
 			vector<vector<cv::Point> > contours;
@@ -173,19 +160,6 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 			for (int i = 0; i < contours.size(); i++)
 			{
 				cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 10, true);
-				int nPoly = contours_poly[i].size();
-				if (nPoly < 10 && nPoly > 2) {
-					int a = findIndex(contours_poly[i][0].y, contours_poly[i][0].x);
-					int b = findIndex(contours_poly[i][nPoly / 3].y, contours_poly[i][nPoly / 3].x);
-					int c = findIndex(contours_poly[i][2 * nPoly / 3].y, contours_poly[i][2 * nPoly / 3].x);
-					pln.findOrientation(pln.points[a], pln.points[b], pln.points[c]);
-					//std::cout << pln.points[a] << " " << pln.points[b] << " " << pln.points[c] << "\n";
-					//std::cout << "center: " << pln.center << "\n";
-					std::cout << "normal: " << pln.normal << " up: " << pln.up << "\n";
-
-					//std::cout << a << " " << b << " " << c << "\n";
-					
-				}
 			}
 
 			for (int i = 0; i < contours.size(); i++)
@@ -193,21 +167,50 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 				drawContours(board, contours_poly, 0, cv::Scalar(0, 255, 0), 5);
 			}
 
-			//obj.setCamera(cv::Point3f(pln.center.x, pln.center.y - 30, -pln.center.z + 150),
-				//cv::Vec3f(pln.normal[0], pln.normal[1], pln.normal[2]));
 
+			cv::Mat data_pts = cv::Mat(300, 3, CV_64FC1);
+			cv::Vec3f normal(0, 0, 0);
+			int jump = plnSrc.size() / 300;
+			for (int i = 0; i < 100; i++) {
+				data_pts.at<double>(i, 0) = plnSrc[i*jump].x;
+				data_pts.at<double>(i, 1) = plnSrc[i*jump].y;
+				data_pts.at<double>(i, 2) = plnSrc[i*jump].z;
+				data_pts.at<double>(i + 100, 0) = plnSrc[(i + 100)*jump].x;
+				data_pts.at<double>(i + 100, 1) = plnSrc[(i + 100)*jump].y;
+				data_pts.at<double>(i + 100, 2) = plnSrc[(i + 100)*jump].z;
+				data_pts.at<double>(i + 200, 0) = plnSrc[(i + 200) *jump].x;
+				data_pts.at<double>(i + 200, 1) = plnSrc[(i + 200)*jump].y;
+				data_pts.at<double>(i + 200, 2) = plnSrc[(i + 200)*jump].z;
+			}
+
+			cv::PCA pca_analysis(data_pts, cv::Mat(), CV_PCA_DATA_AS_ROW);
+			cv::Vec3f cntr = cv::Vec3f((pca_analysis.mean.at<double>(0, 0)),
+				(pca_analysis.mean.at<double>(0, 1)),
+				(pca_analysis.mean.at<double>(0, 2)));
+
+			vector<cv::Point3f> eigen_vecs(2);
+			vector<double> eigen_val(2);
+			for (int i = 0; i < 2; ++i)
+			{
+				eigen_vecs[i] = cv::Point3f(pca_analysis.eigenvectors.at<double>(i, 0),
+					pca_analysis.eigenvectors.at<double>(i, 1),
+					pca_analysis.eigenvectors.at<double>(i, 2));
+				eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
+			}
+			cv::Vec3f p1 = cv::Vec3f((eigen_vecs[0].x * eigen_val[0]), (eigen_vecs[0].y * eigen_val[0]), (eigen_vecs[0].z * eigen_val[0]));
+			cv::Vec3f p2 = cv::Vec3f((eigen_vecs[1].x * eigen_val[1]), (eigen_vecs[1].y * eigen_val[1]), (eigen_vecs[1].z * eigen_val[1]));
+			normal = p1.cross(p2);
+			normal = cv::normalize(normal);
+			//pln.center = cntr;
+
+			pln.normal = normal;
 			obj.setCamera(cv::Point3f(pln.center.x, -pln.center.y, -pln.center.z + 150),
 				cv::Vec3f(pln.normal[0], pln.normal[1], pln.normal[2]));
-
-			//imshow("reprojection", cont);
-			//imshow("reprojection", board);
-
 
 			if (!gpuView) imshow("reprojection", board);
 			else {
 				libfreenect2::Frame b(640, 480, 4);
 				b.data = board.data;
-				//b.data = rect.data;
 				viewer.addFrame("RGB", &b);
 				shutdown = shutdown || viewer.render();
 			}
@@ -249,6 +252,166 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 }
 
 
+void Projector::objProjectionOffline(std::string objPath, std::string objName, bool gpuView)
+{
+	std::cout << "Camera init: ";
+	objObject obj(objPath, objName);
+	obj.loadData();
+	cout << "DONE\n";
+	cv::namedWindow("objTest", CV_WINDOW_NORMAL);
+	cv::moveWindow("objTest", 0, 0);
+	indices.resize(480);
+	for (int i = 0; i < 480; i++) indices[i].resize(640);
+
+	libfreenect2::Registration* registration = new libfreenect2::Registration(_dev->getIrCameraParams(), _dev->getColorCameraParams());
+	libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
+	libfreenect2::FrameMap frames;
+	SimpleViewer viewer;
+	bool shutdown = false;
+	cv::Mat board(480, 640, CV_8UC4, cv::Scalar::all(255));
+	cv::Vec3f prevNormal(-1, -1, -1);
+	if (!gpuView) {
+		cv::namedWindow("reprojection", CV_WINDOW_NORMAL);
+		cv::moveWindow("reprojection", 200, 200);
+		//setWindowProperty("reprojection", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+	}
+	else {
+		viewer.setSize(480, 640); // TO-DO change resolution
+		viewer.initialize();
+		libfreenect2::Frame b(640, 480, 4);
+		b.data = board.data;
+		viewer.addFrame("RGB", &b);
+		shutdown = shutdown || viewer.render();
+	}
+	while (!shutdown)
+	{
+		board = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(255));
+		std::vector<cv::Point3f> plnSrc;
+		if (!gpuView) cv::imshow("reprojection", board);
+		(_listener)->waitForNewFrame(frames);
+		libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
+		libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
+		registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
+
+		PlaneData pln = findRectangle(registration, &undistorted, &registered);
+
+		if (pln.points.size() > 0) {
+			std::vector<cv::Point2f> projected = projectPoints(pln.points);
+			cv::Mat cont = cv::Mat(480, 640, CV_8UC1, cv::Scalar::all(0));
+
+			for (int i = 0; i < projected.size(); i++)
+			{
+				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
+
+					cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
+					ROI.setTo(cv::Scalar(250, 100, 100, 100));
+					cont.at<uchar>(static_cast<int>(480 - projected[i].x), static_cast<int>(projected[i].y), 0) = 255;
+					plnSrc.push_back(pln.points[i]);
+				}
+			}
+			vector<vector<cv::Point> > contours;
+			vector<cv::Vec4i> hierarchy;
+			cv::GaussianBlur(cont, cont, cv::Size(7, 7), 5, 11);
+			findContours(cont, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
+
+			vector<vector<cv::Point> > contours_poly(contours.size());
+			vector<cv::Rect> boundRect(contours.size());
+			vector<cv::Point2f>center(contours.size());
+			vector<float>radius(contours.size());
+
+			for (int i = 0; i < contours.size(); i++)
+			{
+				cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 10, true);
+			}
+
+			for (int i = 0; i < contours.size(); i++)
+			{
+				drawContours(board, contours_poly, 0, cv::Scalar(0, 255, 0), 5);
+			}
+
+
+			cv::Mat data_pts = cv::Mat(300, 3, CV_64FC1);
+			cv::Vec3f normal(0, 0, 0);
+			int jump = plnSrc.size() / 300;
+			for (int i = 0; i < 100; i++) {
+				data_pts.at<double>(i, 0) = plnSrc[i*jump].x;
+				data_pts.at<double>(i, 1) = plnSrc[i*jump].y;
+				data_pts.at<double>(i, 2) = plnSrc[i*jump].z;
+				data_pts.at<double>(i + 100, 0) = plnSrc[(i + 100)*jump].x;
+				data_pts.at<double>(i + 100, 1) = plnSrc[(i + 100)*jump].y;
+				data_pts.at<double>(i + 100, 2) = plnSrc[(i + 100)*jump].z;
+				data_pts.at<double>(i + 200, 0) = plnSrc[(i + 200) *jump].x;
+				data_pts.at<double>(i + 200, 1) = plnSrc[(i + 200)*jump].y;
+				data_pts.at<double>(i + 200, 2) = plnSrc[(i + 200)*jump].z;
+			}
+
+			cv::PCA pca_analysis(data_pts, cv::Mat(), CV_PCA_DATA_AS_ROW);
+			cv::Vec3f cntr = cv::Vec3f((pca_analysis.mean.at<double>(0, 0)),
+				(pca_analysis.mean.at<double>(0, 1)),
+				(pca_analysis.mean.at<double>(0, 2)));
+
+			vector<cv::Point3f> eigen_vecs(2);
+			vector<double> eigen_val(2);
+			for (int i = 0; i < 2; ++i)
+			{
+				eigen_vecs[i] = cv::Point3f(pca_analysis.eigenvectors.at<double>(i, 0),
+					pca_analysis.eigenvectors.at<double>(i, 1),
+					pca_analysis.eigenvectors.at<double>(i, 2));
+				eigen_val[i] = pca_analysis.eigenvalues.at<double>(0, i);
+			}
+			cv::Vec3f p1 = cv::Vec3f((eigen_vecs[0].x * eigen_val[0]), (eigen_vecs[0].y * eigen_val[0]), (eigen_vecs[0].z * eigen_val[0]));
+			cv::Vec3f p2 = cv::Vec3f((eigen_vecs[1].x * eigen_val[1]), (eigen_vecs[1].y * eigen_val[1]), (eigen_vecs[1].z * eigen_val[1]));
+			normal = p1.cross(p2);
+			normal = cv::normalize(normal);
+			//pln.center = cntr;
+
+			pln.normal = normal;
+			obj.setCamera(cv::Point3f(pln.center.x, -pln.center.y, -pln.center.z + 150),
+				cv::Vec3f(pln.normal[0], pln.normal[1], pln.normal[2]));
+
+			if (!gpuView) imshow("reprojection", board);
+			else {
+				libfreenect2::Frame b(640, 480, 4);
+				b.data = board.data;
+				viewer.addFrame("RGB", &b);
+				shutdown = shutdown || viewer.render();
+			}
+		}
+		cv::Mat im = obj.render();
+		cv::imshow("objTest", im);
+		//}
+		(_listener)->release(frames);
+		if (!gpuView) {
+			int op = cv::waitKey(50);
+			if (op == 100 || (char)(op) == 'd') right -= 1;
+			if (op == 115 || (char)(op) == 's') up += 1;
+			if (op == 97 || (char)(op) == 'a') right += 1;
+			if (op == 119 || (char)(op) == 'w') up -= 1;
+
+			if (op == 114 || (char)(op) == 'r') rotX -= 0.5;
+			if (op == 102 || (char)(op) == 'f') rotX += 0.5;
+
+			if (op == 1113997 || op == 1048586 || op == 1048608 || op == 10 || op == 32)
+			{
+				std::cout << "right = " << right << ";\nup = " << up << ";\nrotX = " << rotX << ";\n";
+				break;
+			}
+		}
+		else {
+			//right = 0;
+			//up = 0;
+			//rotX = 0;
+			right = viewer.offsetX;
+			up = viewer.offsetY;
+			rotX = viewer.rot;
+		}
+	}
+	if (!gpuView) cv::destroyWindow("reprojection");
+	else {
+		viewer.stopWindow();
+	}
+	cv::destroyWindow("objTest");
+}
 
 void Projector::reproject(bool gpuView)
 {
@@ -360,8 +523,6 @@ void Projector::reproject(bool gpuView)
 
 void Projector::showRectangle(bool gpuView)
 {
-	//int indices[480][640];
-	/*vector<vector<int> >indices;*/
 	indices.resize(480);
 	for (int i = 0; i < 480; i++) indices[i].resize(640);
 
@@ -371,7 +532,6 @@ void Projector::showRectangle(bool gpuView)
 	SimpleViewer viewer;
 	bool shutdown = false;
 	cv::Mat board(480, 640, CV_8UC4, cv::Scalar::all(255));
-	//cv::Mat rect(480, 640, CV_8UC4, cv::Scalar::all(255));
 	if (!gpuView) {
 		cv::namedWindow("reprojection", CV_WINDOW_NORMAL);
 		cv::moveWindow("reprojection", 0, 0);
@@ -388,7 +548,6 @@ void Projector::showRectangle(bool gpuView)
 	while (!shutdown)
 	{
 		board = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(255));
-		//rect = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(255));
 		std::vector<cv::Point3f> wrldSrc;
 		std::vector<cv::Point3f> plnSrc;
 		if (!gpuView) cv::imshow("reprojection", board);
@@ -428,11 +587,9 @@ void Projector::showRectangle(bool gpuView)
 			}
 		}
 		
-		//plnSrc = findRectangle(registration, &undistorted, &registered);
 		PlaneData pln = findRectangle(registration, &undistorted, &registered);
 		if (wrldSrc.size() > 0) {
 			std::vector<cv::Point2f> projected = projectPoints(wrldSrc);
-			//std::vector<cv::Point2f> projected = (wrldSrc);
 			for (int i = 0; i < projected.size(); i++)
 			{
 				if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
@@ -441,62 +598,35 @@ void Projector::showRectangle(bool gpuView)
 					ROI.setTo(cv::Scalar(100, 100, 150, 100));
 				}
 			}
-			//if (plnSrc.size() > 0) {
 			if (pln.points.size() > 0) {
-				//projected = projectPoints(plnSrc);
 				projected = projectPoints(pln.points);
-				//pln.projectedPoints = projected;
 				cv::Mat cont = cv::Mat(480, 640, CV_8UC1, cv::Scalar::all(0));
 
-				//int indices[480][640];
-				for (int i = 0; i < 480; i++)
-					for (int j = 0; j < 640; j++)
-						indices[i][j] = -1;
-
-				cv::Point2d maxX(-1, 0);
-				cv::Point2d maxY(0, -1);
-				cv::Point2d minX(99999999, 0);
-				cv::Point2d minY(0, 99999999);
 				for (int i = 0; i < projected.size(); i++)
 				{
 					if (480 - projected[i].x >0 && projected[i].y > 0 && 480 - projected[i].x < 475 && projected[i].y < 630) {
 						
 						cv::Mat ROI = board(cv::Rect(static_cast<int>(projected[i].y), static_cast<int>(480 - projected[i].x), 2, 2));
 						ROI.setTo(cv::Scalar(250, 100, 100, 100));
-
 						cont.at<uchar>(static_cast<int>(480 - projected[i].x), static_cast<int>(projected[i].y), 0) = 255;
-						//std::cout << (int)(480 - projected[i].x) << " ";
-						//indices[(int)(480 - projected[i].x)][0] = 123;
 						indices[static_cast<int>(480 - projected[i].x)][static_cast<int>(projected[i].y)] = i;
 					}
 				}
 				vector<vector<cv::Point> > contours;
 				vector<cv::Vec4i> hierarchy;
 				cv::GaussianBlur(cont, cont, cv::Size(7, 7), 5, 11);
-				
-				//cv::blur(cont, cont, cv::Size(4, 4));
-				//cv::threshold(cont, cont, 80, 255, cv::THRESH_BINARY);
 				findContours(cont, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
-				//drawContours(board, contours, 0, cv::Scalar(0, 255, 0), 5);
-				//std::cout << "countours: " << contours[0].size() << "\n";
-
 
 				vector<vector<cv::Point> > contours_poly(contours.size());
 				vector<cv::Rect> boundRect(contours.size());
 				vector<cv::Point2f>center(contours.size());
 				vector<float>radius(contours.size());
-
+				int nPoly;
 				for (int i = 0; i < contours.size(); i++)
 				{
 					cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 10, true);
-					int nPoly = contours_poly[i].size();
-					if (nPoly < 10 && nPoly > 2) {
-						int a = findIndex(contours_poly[i][0].y, contours_poly[i][0].x);
-						int b = findIndex(contours_poly[i][nPoly/2].y, contours_poly[i][nPoly/2].x);
-						int c = findIndex(contours_poly[i][2*nPoly/3].y, contours_poly[i][2*nPoly/3].x);
-
-						//std::cout << a << " " << b << " " << c << "\n";
-					}
+					nPoly = contours_poly[i].size();
+					
 				}
 
 				for (int i = 0; i< contours.size(); i++)
@@ -504,16 +634,11 @@ void Projector::showRectangle(bool gpuView)
 					drawContours(board, contours_poly, 0, cv::Scalar(0, 255, 0), 5);
 				}
 
-				
-				//imshow("reprojection", cont);
-				//imshow("reprojection", board);
-
 			}
 			if (!gpuView) imshow("reprojection", board);
 			else {
 				libfreenect2::Frame b(640, 480, 4);
 				b.data = board.data;
-				//b.data = rect.data;
 				viewer.addFrame("RGB", &b);
 				shutdown = shutdown || viewer.render();
 			}
@@ -525,7 +650,6 @@ void Projector::showRectangle(bool gpuView)
 			if (op == 115 || (char)(op) == 's') up += 1;
 			if (op == 97 || (char)(op) == 'a') right += 1;
 			if (op == 119 || (char)(op) == 'w') up -= 1;
-
 			if (op == 114 || (char)(op) == 'r') rotX -= 0.5;
 			if (op == 102 || (char)(op) == 'f') rotX += 0.5;
 
@@ -581,10 +705,22 @@ int Projector::findIndex(int x, int y)
 }
 
 // TODO? multiple starting points (now only in the middle)
-//std::vector<cv::Point3f> Projector::findRectangle(libfreenect2::Registration *registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered) //RANSAC thing
 PlaneData Projector::findRectangle(libfreenect2::Registration *registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered) //RANSAC thing
 {
 	PlaneData result;
+	const int numberOfPoints = 3;
+	int startingPoints[numberOfPoints][2] = { {256,213},
+								{ 256,313},
+								{ 256,113} };
+
+	for (int i = 0; i < numberOfPoints; i++)
+	{
+		//std::cout << "I: " << i << "\n";
+		result = findRectangleAt(registration, undistorted, registered, startingPoints[i][0], startingPoints[i][1]);
+		if (result.points.size() > 0) break;
+	}
+	return result;
+	/*PlaneData result;
 	std::vector<cv::Point3f> wrldSrc;
 	std::queue<cv::Point3f > queue;
 	bool visited[513][425];
@@ -646,11 +782,82 @@ PlaneData Projector::findRectangle(libfreenect2::Registration *registration, lib
 
 		}
 	}
-	if (wrldSrc.size() < 2500) wrldSrc.clear();
+	if (wrldSrc.size() < 5000) wrldSrc.clear();
+	result.addInput(wrldSrc);
+	std::cout << "SIZE: " << wrldSrc.size() << "\n";
+	return result;*/
+}
+
+
+PlaneData Projector::findRectangleAt(libfreenect2::Registration *registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered, int startX, int startY)
+{
+	PlaneData result;
+	std::vector<cv::Point3f> wrldSrc;
+	std::queue<cv::Point3f > queue;
+	bool visited[513][425];
+	for (int i = 0; i <= 512; i++)
+		for (int j = 0; j <= 424; j++)
+			visited[i][j] = false;
+	double constant = 0.007;
+	int num = 100;
+	float x1 = 0, y1 = 0, z1 = 0, color = 0;
+	registration->getPointXYZRGB(undistorted, registered, startX, startY, x1, y1, z1, color);
+	queue.push(cv::Point3f(startX, startY, z1));
+	wrldSrc.push_back(cv::Point3f(x1, y1, z1)*num);
+	while (!queue.empty())
+	{
+		cv::Point3f p = queue.front();
+		queue.pop();
+		if (!visited[(int)p.x][(int)p.y])
+		{
+			int ix = (int)p.x;
+			int iy = (int)p.y;
+			visited[ix][iy] = true;
+			float x = 0, y = 0, z = 0, color = 0;
+			if (ix < 511 && !visited[ix + 1][iy])
+			{
+				registration->getPointXYZRGB(undistorted, registered, ix + 1, iy, x, y, z, color);
+				if (abs(z - p.z) < constant)
+				{
+					queue.push(cv::Point3f(ix + 1, iy, z));
+					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
+				}
+			}
+			if (ix >  0 && !visited[ix - 1][iy])
+			{
+				registration->getPointXYZRGB(undistorted, registered, ix - 1, iy, x, y, z, color);
+				if (abs(z - p.z) < constant)
+				{
+					queue.push(cv::Point3f(ix - 1, iy, z));
+					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
+				}
+			}
+			if (iy < 423 && !visited[ix][iy + 1])
+			{
+				registration->getPointXYZRGB(undistorted, registered, ix, iy + 1, x, y, z, color);
+				if (abs(z - p.z) < constant)
+				{
+					queue.push(cv::Point3f(ix, iy + 1, z));
+					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
+				}
+			}
+			if (iy > 0 && !visited[ix][iy - 1])
+			{
+				registration->getPointXYZRGB(undistorted, registered, ix, iy - 1, x, y, z, color);
+				if (abs(z - p.z) < constant)
+				{
+					queue.push(cv::Point3f(ix, iy - 1, z));
+					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
+				}
+			}
+
+		}
+	}
+	if (wrldSrc.size() < 6000) wrldSrc.clear();
 	result.addInput(wrldSrc);
 	return result;
-	//return wrldSrc;
 }
+
 
 std::vector<cv::Point2f> Projector::projectPoints(std::vector<cv::Point3f> in)
 {
@@ -690,7 +897,13 @@ void PlaneData::findOrientation(cv::Point3f a, cv::Point3f b, cv::Point3f c)
 	//std::cout << "tp:" << tempUp << " up:" << up << " no:" << normal << "\n";
 }
 
-//void PlaneData::findOrientation(std::vector<cv::Point2f> _projectedPoints)
-//{
-//	projectedPoints = _projectedPoints;
-//}
+cv::Vec3f PlaneData::computeNormal(cv::Point3f a, cv::Point3f b, cv::Point3f c)
+{
+	cv::Vec3f normal(0, 0, 0);
+	cv::Vec3f f1 = cv::Vec3f(b.x - a.x, b.y - a.y, b.z - a.z);
+	cv::Vec3f f2 = cv::Vec3f(c.x - a.x, c.y - a.y, c.z - a.z);
+	normal = f1.cross(f2);
+	if (normal[1] < 0) normal = -normal;
+	normal = cv::normalize(normal);
+	return normal;
+}
