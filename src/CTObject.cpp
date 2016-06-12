@@ -3,17 +3,18 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
 
 
 
 
 void CTObject::readData()
 {
-	_ASSERT(xSize > 0 && ySize > 0 && zSize > 0);
+	//_ASSERT(xSize > 0 && ySize > 0 && zSize > 0);
 	std::cout << "Reading data\n";
 	ifstream inFile;
 	size_t size = 0;
-	for (int j = 1; j <= zSize; j++) {
+	for (int j = start; j <= start+zSize; j++) {
 		std::cout << j << "/" << zSize;
 		int ind = j;
 
@@ -59,6 +60,30 @@ void CTObject::readData()
 		}
 		inFile.close();
 		delete[] oData;
+		std::cout << '\r';
+	}
+}
+
+void CTObject::readDataPNG()
+{
+	std::cout << "Reading data\n";
+	ifstream inFile;
+	int size = 0;
+	size = xSize * ySize;
+	for (int j = start; j < start + zSize; j++) {
+		std::cout << j-start+1 << "/" << zSize;
+		int ind = j-start;
+
+		cv::Mat image = cv::imread(path + intToStr(j) + ".png", CV_LOAD_IMAGE_GRAYSCALE);
+		data[ind] = new char[size];
+		for (int i = 0; i < image.size[0]; i++)
+		{
+			for (int k = 0; k < image.size[1]; k++)
+			{
+				data[ind][k*ySize + i] = image.at<char>(k, i);
+			}
+		}
+
 		std::cout << '\r';
 	}
 }

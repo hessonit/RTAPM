@@ -11,9 +11,10 @@ enum SIDE{FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM};
 class CTObject
 {
 public:
-	CTObject(string _path, int _xSize, int _ySize, int _zSize);
+	CTObject(string _path, int _xSize, int _ySize, int _zSize, int _start);
 	~CTObject();
 	void readData();
+	void readDataPNG();
 	void showData();
 	void showDataFromView();
 	char at(int x, int y, int z);
@@ -26,11 +27,11 @@ private:
 	SIDE view;
 	char **data;
 	string path;
-	const int xSize, ySize, zSize;
+	const int xSize, ySize, zSize, start;
 };
 
 
-inline CTObject::CTObject(string _path, int _xSize, int _ySize, int _zSize) : xSize(_xSize), ySize(_ySize), zSize(_zSize)
+inline CTObject::CTObject(string _path, int _xSize, int _ySize, int _zSize, int _start) : xSize(_xSize), ySize(_ySize), zSize(_zSize), start(_start)
 {
 	path = _path;
 	data = new char*[_zSize];

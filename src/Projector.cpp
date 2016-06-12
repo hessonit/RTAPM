@@ -25,10 +25,10 @@ void Projector::setKinect(libfreenect2::SyncMultiFrameListener * listener, libfr
 	_listener = listener;
 	_dev = dev;
 }
-
+//TO-DO fix that
 void Projector::ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim)
 {
-	CTObject ctObject(ctFilePath, xDim, yDim, zDim);
+	CTObject ctObject(ctFilePath, xDim, yDim, zDim, 1);
 	ctObject.readData();
 
 	libfreenect2::FrameMap frames;

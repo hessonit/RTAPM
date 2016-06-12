@@ -419,15 +419,18 @@ if(tt == 1){
   }
   if (test == 6)
   {
-	  SIDE view = SIDE::BOTTOM;
+	  //SIDE view = SIDE::BOTTOM;
 	  std::string pathBunny = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
 	  std::string pathBrain = "C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.";
-	  CTObject obj(pathBunny, 512, 512, 360);
+	  std::string pathManBrain = "C:\\Users\\Adam\\Desktop\\volumetric data\\VHMCT1mm_Head\\Head_png\\vhm.";
+	  //CTObject obj(pathBunny, 512, 512, 360, 1);
 	  //CTObject obj(pathBrain, 256, 256, 106);
-	  obj.setView(view);
-	  obj.readData();
-	  //obj.showData();
-	  obj.showDataFromView();
+	  CTObject obj(pathManBrain, 512, 512, 244, 1001);
+	  //obj.setView(view);
+	  //obj.readData();
+	  obj.readDataPNG();
+	  obj.showData();
+	  //obj.showDataFromView();
   }
   if (test == 7) {
 	  int gpuView = 0;
