@@ -4,6 +4,9 @@
 #include "intrinsics.h"
 #include <iostream>
 #include <cstdlib>
+#include <ctime>
+#include <fstream>
+
 using namespace cv;
 using namespace std;
 
@@ -13,12 +16,110 @@ Calibration::Calibration()
 	calibrationEnd = false;
 }
 
-// TODO read&save calibration settings
 void Calibration::readSettings(std::string path)
 {
+	std::ifstream in(path, std::ios_base::binary);
+	float c1,c2,c3,c4,c5,c6,c7,c8,c9;
+	if (in.good())
+	{
+		in.read((char *)&c1, sizeof(float));
+		in.read((char *)&c2, sizeof(float));
+		in.read((char *)&c3, sizeof(float));
+		in.read((char *)&c4, sizeof(float));
+		in.read((char *)&c5, sizeof(float));
+		in.read((char *)&c6, sizeof(float));
+		in.read((char *)&c7, sizeof(float));
+		in.read((char *)&c8, sizeof(float));
+		in.read((char *)&c9, sizeof(float));
+
+		Mat cam = (cv::Mat_<double>(3, 3) << c1,c2,c3,
+											c4,c5,c6,
+											c7,c8,c9);
+
+
+		in.read((char *)&c1, sizeof(float));
+		in.read((char *)&c2, sizeof(float));
+		in.read((char *)&c3, sizeof(float));
+
+		Mat tra = (cv::Mat1f(3, 1) << c1,
+										c2,
+										c3);
+
+		in.read((char *)&c1, sizeof(float));
+		in.read((char *)&c2, sizeof(float));
+		in.read((char *)&c3, sizeof(float));
+
+		Mat rot = (cv::Mat1f(3, 1) << c1,
+										c2,
+										c3);
+
+		in.read((char *)&c1, sizeof(float));
+		in.read((char *)&c2, sizeof(float));
+		in.read((char *)&c3, sizeof(float));
+		in.read((char *)&c4, sizeof(float));
+		in.read((char *)&c5, sizeof(float));
+
+		Mat dist = (cv::Mat1f(5, 1) << c1, c2, c3, c4, c5);
+
+		cameraMatrix = cam;
+		vector<Mat> temp1;
+		temp1.push_back(tra);
+		boardTranslations = temp1;
+
+		vector<Mat> temp2;
+		temp2.push_back(tra);
+		boardRotations = temp2;
+
+		distCoeffs = dist;
+
+		in.close();
+	}
+
+
 }
 void Calibration::saveSettings(std::string path)
 {
+	time_t t = time(0);
+	struct tm * now = localtime(&t);
+	string name = "calibration" + intToStr((now->tm_year) + 1900) +
+								intToStr((now->tm_mon) + 1) +
+								intToStr((now->tm_mday)) + "_" +
+								intToStr((now->tm_hour)) + "_" + 
+								intToStr((now->tm_min)) + ".bin";
+
+	ofstream out(path+name, ios_base::binary);
+	if (out.good())
+	{
+		//std::cout << "Writing floating point number: " << std::fixed << f1 << std::endl;
+		out.write((char *)&cameraMatrix.at<float>(0, 0), sizeof(float));
+		out.write((char *)&cameraMatrix.at<float>(0, 1), sizeof(float));
+		out.write((char *)&cameraMatrix.at<float>(0, 2), sizeof(float));
+
+		out.write((char *)&cameraMatrix.at<float>(1, 0), sizeof(float));
+		out.write((char *)&cameraMatrix.at<float>(1, 1), sizeof(float));
+		out.write((char *)&cameraMatrix.at<float>(1, 2), sizeof(float));
+
+		out.write((char *)&cameraMatrix.at<float>(2, 0), sizeof(float));
+		out.write((char *)&cameraMatrix.at<float>(2, 1), sizeof(float));
+		out.write((char *)&cameraMatrix.at<float>(2, 2), sizeof(float));
+
+		out.write((char *)&boardTranslations[0].at<float>(0, 0), sizeof(float));
+		out.write((char *)&boardTranslations[0].at<float>(0, 1), sizeof(float));
+		out.write((char *)&boardTranslations[0].at<float>(0, 2), sizeof(float));
+
+		out.write((char *)&boardRotations[0].at<float>(0, 0), sizeof(float));
+		out.write((char *)&boardRotations[0].at<float>(0, 1), sizeof(float));
+		out.write((char *)&boardRotations[0].at<float>(0, 2), sizeof(float));
+
+		out.write((char *)&distCoeffs.at<float>(0, 0), sizeof(float));
+		out.write((char *)&distCoeffs.at<float>(0, 1), sizeof(float));
+		out.write((char *)&distCoeffs.at<float>(0, 2), sizeof(float));
+		out.write((char *)&distCoeffs.at<float>(0, 3), sizeof(float));
+		out.write((char *)&distCoeffs.at<float>(0, 4), sizeof(float));
+
+		out.close();
+	}
+
 }
 
 
@@ -133,11 +234,16 @@ void Calibration::collectPoints(libfreenect2::Freenect2Device *dev)
 	libfreenect2::FrameMap frames;
   	libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
   	libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
-  	int numberOfIterations = 5;
+  	//int numberOfIterations = 5;
   	// pair<int,int> tab[8] = {{200,200},{200,100},{100,100},{100,200},{200,200},{200,100},{100,100},{100,200}};
 	pair<int,int> tab[10] = {{200,200},{200,200},{200,200},{200,200},{200,200},{100,100},{100,100},{100,100},{100,100},{100,100}};
 	namedWindow("calibration", CV_WINDOW_NORMAL);
-	moveWindow("calibration", 0, 0);
+	moveWindow("calibration", 1200, 0);
+	//std::cout << "prepare window\n";
+	//int _temp;
+	//std::cin >> _temp;
+	setWindowProperty("calibration", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+
 	while(!calibrationEnd)
 	{
 		pair<int,int> projEntryPoint = projectChessbooard(blockSize, 200, 200);
@@ -338,6 +444,16 @@ vector<Point2f> Calibration::projectPoints2(vector<Point3f> wrldSrc)
 	}
 
     return result;
+}
+
+void Calibration::printCalibration()
+{
+	cout << cameraMatrix << "\n" << distCoeffs << "\n";
+	cout << "RT:\n";
+	for (int i = 0; i < boardRotations.size(); i++) cout << boardRotations[i] << "\n";
+	cout << "TR:\n";
+	for (int i = 0; i < boardTranslations.size(); i++) cout << boardTranslations[i] << "\n";
+	
 }
 
 vector<Vec2f> Calibration::project(vector<Point3f> wrldSrc, int i)

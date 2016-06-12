@@ -34,7 +34,7 @@ public:
 	void setMatrices(cv::Mat mt, cv::Mat mr, cv::Mat cam, cv::Mat pro);
 	void setKinect(libfreenect2::SyncMultiFrameListener *listener, libfreenect2::Freenect2Device *dev);
 	void ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim);
-	void objProjection(std::string objPath, std::string objName, bool gpuView);
+	void objProjection(std::string objPath, std::string objName);
 	void objProjectionOffline(std::string objPath, std::string objName, bool gpuView);
 	void reproject(bool gpuView = false);
 	void showRectangle(bool gpuView = false);
@@ -44,10 +44,8 @@ public:
 private:
 
 	int findIndex(int x, int y);
-	//std::vector<cv::Point3f> findRectangle(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
 	PlaneData findRectangle(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
 	PlaneData findRectangleAt(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered, int startX, int startY);
-
 
 	std::vector<cv::Point2f> projectPoints(std::vector<cv::Point3f> in);
 

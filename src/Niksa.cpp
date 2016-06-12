@@ -136,6 +136,8 @@ if (tt == 2 || tt == 3){
       //setWindowProperty("calibration2", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
     } else {
       viewer.initialize();
+	  c.readSettings("C:\\Users\\Adam\\Documents\\GitHub\\calibration2016613_0_43.bin");
+	  c.printCalibration();
     }
     bool initViewer = true;
     while(!endin)
@@ -212,7 +214,15 @@ if (tt == 2 || tt == 3){
 
         pro = (cv::Mat1f(5,1) << 0,0,0,0,0);
         if(singleUpdate){
+			std::cout << "duuupa";
           singleUpdate = false;
+		  c.cameraMatrix = cam;
+		  c.distCoeffs = pro;
+		  vector <cv::Mat> temp;
+		  temp.push_back(mt);
+		  c.boardRotations = temp;
+		  c.boardTranslations = temp;
+		  c.saveSettings("C:\\Users\\Adam\\Documents\\GitHub\\");
           ////////////////////////////
           right = -40;
           up = 89;
@@ -476,9 +486,6 @@ if(tt == 1){
   }
   if (test == 9)
   {
-	  int gpuView = 0;
-	  std::cout << "CPU view(0) or GPU view(1)\n";
-	  std::cin >> gpuView;
 	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
 		  17.7872756163266,
 		  -6.798784049003872);
@@ -511,7 +518,7 @@ if(tt == 1){
 		  Projector *projector = new Projector();
 		  projector->setKinect(&listener, dev);
 		  projector->setMatrices(mt, mr, cam, pro);
-		  projector->objProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\", "sibenik", gpuView>0);
+		  projector->objProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\", "sibenik");
 	  dev->stop();
 	  dev->close();
   }

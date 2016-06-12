@@ -34,12 +34,14 @@ public:
 	
 	std::vector<cv::Vec2f>	 project(std::vector<cv::Point3f> wrldSrc, int i);
 	std::vector<cv::Point2f> projectPoints2(std::vector<cv::Point3f> wrldSrc);
+
+	void					 printCalibration();
  
 	int						 projectorResolutionX, projectorResolutionY;
 	std::vector<cv::Mat>	 boardRotations, boardTranslations;
 	cv::Mat					 cameraMatrix, distCoeffs;
 private:
-
+	int										numberOfIterations = 5;
 	bool									calibrationEnd;
 	libfreenect2::SyncMultiFrameListener*	_listener;
 	cv::Mat									_chessBoard;

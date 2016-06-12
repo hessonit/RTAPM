@@ -90,7 +90,7 @@ void Projector::ctProjection(std::string ctFilePath, int xDim, int yDim, int zDi
 
 }
 
-void Projector::objProjection(std::string objPath, std::string objName, bool gpuView)
+void Projector::objProjection(std::string objPath, std::string objName)
 {
 	std::cout << "Camera init: ";
 	objObject obj(objPath, objName);
@@ -108,24 +108,16 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 	bool shutdown = false;
 	cv::Mat board(480, 640, CV_8UC4, cv::Scalar::all(255));
 	cv::Vec3f prevNormal(-1, -1, -1);
-	if (!gpuView) {
+		
 		cv::namedWindow("reprojection", CV_WINDOW_NORMAL);
 		cv::moveWindow("reprojection", 200, 200);
 		//setWindowProperty("reprojection", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-	}
-	else {
-		viewer.setSize(480, 640); // TO-DO change resolution
-		viewer.initialize();
-		libfreenect2::Frame b(640, 480, 4);
-		b.data = board.data;
-		viewer.addFrame("RGB", &b);
-		shutdown = shutdown || viewer.render();
-	}
+
 	while (!shutdown)
 	{
 		board = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(255));
 		std::vector<cv::Point3f> plnSrc;
-		if (!gpuView) cv::imshow("reprojection", board);
+		cv::imshow("reprojection", board);
 		(_listener)->waitForNewFrame(frames);
 		libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
 		libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
@@ -159,15 +151,11 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 
 			for (int i = 0; i < contours.size(); i++)
 			{
-				cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 5, true);
+				cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 8, true);
 			}
 
-			for (int i = 0; i < contours.size(); i++)
-			{
 				//drawContours(board, contours_poly, 0, cv::Scalar(0, 0, 0), 5, -1);
-				cv::fillConvexPoly(board, contours_poly[0], cv::Scalar(0, 0, 0));
-			}
-
+			cv::fillConvexPoly(board, contours_poly[0], cv::Scalar(0, 0, 0));
 
 			cv::Mat data_pts = cv::Mat(300, 3, CV_64FC1);
 			cv::Vec3f normal(0, 0, 0);
@@ -202,13 +190,10 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 			cv::Vec3f p2 = cv::Vec3f((eigen_vecs[1].x * eigen_val[1]), (eigen_vecs[1].y * eigen_val[1]), (eigen_vecs[1].z * eigen_val[1]));
 			normal = p1.cross(p2);
 			normal = cv::normalize(normal);
-			//pln.center = cntr;
 
 			pln.normal = normal;
 			obj.setCamera(cv::Point3f(pln.center.x, -pln.center.y, -pln.center.z + 150),
 				cv::Vec3f(pln.normal[0], pln.normal[1], pln.normal[2]));
-
-
 
 			int maxX = -1, minX = 99999999;
 			int maxY = -1, minY = 99999999;
@@ -231,29 +216,18 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 					if (c[2] == 0 )
 					{
 						cv::Vec3b b = im.at<cv::Vec3b>(j, i);
-						cv::Vec4b col = cv::Vec4b(b[0], b[1], b[2], 0);
+						cv::Vec4b col = cv::Vec4b(b[0], b[1], b[2], 255);
 						rect.at<cv::Vec4b>(j, i) = col;
 					}
-					
 				}
 			}
 			board(cv::Rect(minX, minY, maxX - minX, maxY - minY)) = rect;
 
-
-
-			if (!gpuView) imshow("reprojection", board);
-			else {
-				libfreenect2::Frame b(640, 480, 4);
-				b.data = board.data;
-				viewer.addFrame("RGB", &b);
-				shutdown = shutdown || viewer.render();
-			}
-
-
+			imshow("reprojection", board);
 		
 		}
 		(_listener)->release(frames);
-		if (!gpuView) {
+		{
 			int op = cv::waitKey(50);
 			if (op == 100 || (char)(op) == 'd') right -= 1;
 			if (op == 115 || (char)(op) == 's') up += 1;
@@ -269,20 +243,8 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 				break;
 			}
 		}
-		else {
-			//right = 0;
-			//up = 0;
-			//rotX = 0;
-			right = viewer.offsetX;
-			up = viewer.offsetY;
-			rotX = viewer.rot;
-		}
 	}
-	if (!gpuView) cv::destroyWindow("reprojection");
-	else {
-		viewer.stopWindow();
-	}
-	//cv::destroyWindow("objTest");
+	cv::destroyWindow("reprojection");
 }
 
 

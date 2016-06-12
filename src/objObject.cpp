@@ -38,9 +38,7 @@ void objObject::loadData()
 	reader->SetRenderWindow(renderWindow);
 	reader->Read();
 	double *f = camera->GetFocalPoint();
-	//std::cout << "FOCAL POINT: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
 	f = camera->GetViewUp();
-	//std::cout << "VIEW UP: " << *(f) << " " << *(f + 1) << " " << *(f + 2) << "\n";
 }
 
 cv::Mat objObject::render()
@@ -61,15 +59,11 @@ cv::Mat objObject::render()
 
 void objObject::setCameraUp(double x, double y, double z)
 {
-	//std::cout << "SET UP\n";
 	camera->SetViewUp(x, y, z);
-	
 }
 
 void objObject::moveCameraBy(double x, double y, double z)
 {
-	//std::cout << "MOVE CAMERA BY\n";
-	//double *pos = camera->GetPosition();
 	camera->SetPosition((*position) + x, *(position + 1) + y, *(position + 2) + z);
 }
 
