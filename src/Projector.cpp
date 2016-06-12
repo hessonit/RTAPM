@@ -96,8 +96,8 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 	objObject obj(objPath, objName);
 	obj.loadData();
 	cout << "DONE\n";
-	cv::namedWindow("objTest", CV_WINDOW_NORMAL);
-	cv::moveWindow("objTest", 0, 0);
+	//cv::namedWindow("objTest", CV_WINDOW_NORMAL);
+	//cv::moveWindow("objTest", 0, 0);
 	indices.resize(480);
 	for (int i = 0; i < 480; i++) indices[i].resize(640);
 
@@ -159,12 +159,13 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 
 			for (int i = 0; i < contours.size(); i++)
 			{
-				cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 10, true);
+				cv::approxPolyDP(cv::Mat(contours[i]), contours_poly[i], 5, true);
 			}
 
 			for (int i = 0; i < contours.size(); i++)
 			{
-				drawContours(board, contours_poly, 0, cv::Scalar(0, 255, 0), 5);
+				//drawContours(board, contours_poly, 0, cv::Scalar(0, 0, 0), 5, -1);
+				cv::fillConvexPoly(board, contours_poly[0], cv::Scalar(0, 0, 0));
 			}
 
 
@@ -207,6 +208,39 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 			obj.setCamera(cv::Point3f(pln.center.x, -pln.center.y, -pln.center.z + 150),
 				cv::Vec3f(pln.normal[0], pln.normal[1], pln.normal[2]));
 
+
+
+			int maxX = -1, minX = 99999999;
+			int maxY = -1, minY = 99999999;
+
+			for (int i = 0; i < contours_poly[0].size(); i++) {
+				if (contours_poly[0][i].x > maxX) maxX = contours_poly[0][i].x;
+				if (contours_poly[0][i].x < minX) minX = contours_poly[0][i].x;
+				if (contours_poly[0][i].y > maxY) maxY = contours_poly[0][i].y;
+				if (contours_poly[0][i].y < minY) minY = contours_poly[0][i].y;
+			}
+
+			cv::Mat im = obj.render();
+			cv::resize(im, im, cv::Size(maxX - minX, maxY - minY));
+			cv::Mat rect = board(cv::Rect(minX, minY, maxX - minX, maxY - minY ));
+			for (int i = 0; i < maxX - minX; i++)
+			{
+				for (int j = 0; j < maxY - minY; j++)
+				{
+					cv::Vec4b c = rect.at<cv::Vec4b>(j, i);
+					if (c[2] == 0 )
+					{
+						cv::Vec3b b = im.at<cv::Vec3b>(j, i);
+						cv::Vec4b col = cv::Vec4b(b[0], b[1], b[2], 0);
+						rect.at<cv::Vec4b>(j, i) = col;
+					}
+					
+				}
+			}
+			board(cv::Rect(minX, minY, maxX - minX, maxY - minY)) = rect;
+
+
+
 			if (!gpuView) imshow("reprojection", board);
 			else {
 				libfreenect2::Frame b(640, 480, 4);
@@ -214,10 +248,10 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 				viewer.addFrame("RGB", &b);
 				shutdown = shutdown || viewer.render();
 			}
+
+
+		
 		}
-		cv::Mat im = obj.render();
-		cv::imshow("objTest", im);
-		//}
 		(_listener)->release(frames);
 		if (!gpuView) {
 			int op = cv::waitKey(50);
@@ -248,7 +282,7 @@ void Projector::objProjection(std::string objPath, std::string objName, bool gpu
 	else {
 		viewer.stopWindow();
 	}
-	cv::destroyWindow("objTest");
+	//cv::destroyWindow("objTest");
 }
 
 
@@ -704,7 +738,6 @@ int Projector::findIndex(int x, int y)
 	return result;
 }
 
-// TODO? multiple starting points (now only in the middle)
 PlaneData Projector::findRectangle(libfreenect2::Registration *registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered) //RANSAC thing
 {
 	PlaneData result;
@@ -720,72 +753,6 @@ PlaneData Projector::findRectangle(libfreenect2::Registration *registration, lib
 		if (result.points.size() > 0) break;
 	}
 	return result;
-	/*PlaneData result;
-	std::vector<cv::Point3f> wrldSrc;
-	std::queue<cv::Point3f > queue;
-	bool visited[513][425];
-	for (int i = 0; i <= 512; i++)
-		for (int j = 0; j <= 424; j++)
-			visited[i][j] = false;
-	double constant = 0.007;
-	int num = 100;
-	float x1 = 0, y1 = 0, z1 = 0, color = 0;
-	registration->getPointXYZRGB(undistorted, registered, 256, 213, x1, y1, z1, color);
-	queue.push(cv::Point3f(256, 213, z1));
-	wrldSrc.push_back(cv::Point3f(x1, y1, z1)*num);
-	while (!queue.empty())
-	{
-		cv::Point3f p = queue.front();
-		queue.pop();
-		if (!visited[(int)p.x][(int)p.y])
-		{
-			int ix = (int)p.x;
-			int iy = (int)p.y;
-			visited[ix][iy] = true;
-			float x = 0, y = 0, z = 0, color = 0;
-			if (ix < 511 && !visited[ix + 1][iy])
-			{
-				registration->getPointXYZRGB(undistorted, registered, ix + 1, iy, x, y, z, color);
-				if (abs(z - p.z) < constant)
-				{
-					queue.push(cv::Point3f(ix + 1, iy, z));
-					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
-				}
-			}
-			if (ix >  0 && !visited[ix - 1][iy])
-			{
-				registration->getPointXYZRGB(undistorted, registered, ix - 1, iy, x, y, z, color);
-				if (abs(z - p.z) < constant)
-				{
-					queue.push(cv::Point3f(ix - 1, iy, z));
-					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
-				}
-			}
-			if (iy < 423 && !visited[ix][iy + 1])
-			{
-				registration->getPointXYZRGB(undistorted, registered, ix, iy + 1, x, y, z, color);
-				if (abs(z - p.z) < constant)
-				{
-					queue.push(cv::Point3f(ix, iy + 1, z));
-					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
-				}
-			}
-			if (iy > 0 && !visited[ix][iy - 1])
-			{
-				registration->getPointXYZRGB(undistorted, registered, ix, iy - 1, x, y, z, color);
-				if (abs(z - p.z) < constant)
-				{
-					queue.push(cv::Point3f(ix, iy - 1, z));
-					wrldSrc.push_back(cv::Point3f(x, y, z)*num);
-				}
-			}
-
-		}
-	}
-	if (wrldSrc.size() < 5000) wrldSrc.clear();
-	result.addInput(wrldSrc);
-	std::cout << "SIZE: " << wrldSrc.size() << "\n";
-	return result;*/
 }
 
 
