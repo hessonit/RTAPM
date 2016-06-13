@@ -4,7 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <string>
-#include "pt.h"
+//#include "pt.h"
 #include "calibration.h"
 
 #include <fstream>
@@ -16,7 +16,12 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/objdetect/objdetect.hpp>
-#include <libfreenect2/frame_listener.hpp>
+
+#include <libfreenect2/libfreenect2.hpp>
+#include <libfreenect2/frame_listener_impl.h>
+#include <libfreenect2/registration.h>
+#include <libfreenect2/packet_pipeline.h>
+#include <libfreenect2/logger.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
@@ -124,8 +129,10 @@ if (tt == 2 || tt == 3){
   bool print = true;
   if(noCalib>-1 || c.calibrationEnded())
   {
-    if(noCalib == 0)
-      c.calibrate();
+	  if (noCalib == 0) {
+		  c.calibrate();
+		  c.saveSettings("C:\\Users\\Adam\\Documents\\GitHub\\");
+	  }
 
     libfreenect2::Registration* registration = new libfreenect2::Registration(dev->getIrCameraParams(), dev->getColorCameraParams());
     libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
@@ -304,13 +311,65 @@ if (tt == 2 || tt == 3){
 if(tt == 1){
 
   int test = 0;
-  PT ptest;
-  std::cout<<"VTKTEST(1) or LIBFREENECT2(2) or PlaneScan(3) or CT Viewer(4) or Reproject(5) or CT data viewer(6) or RTAP(7)\n";
+  std::cout<<"calibrate(2) or PlaneScan(3) or CT Viewer(4) or Reproject(5) or CT data viewer(6) or RTAP(7) or VTKTest2(8) or RTAP(9)\n";
   std::cin >> test;
-  if(test == 1)
-    ptest.test1(); 
-  if(test == 2)
-    ptest.test2(argc, argv);
+  if (test == 2) {
+	  int calibrate = 0;
+	  std::cout << "calibrate(0) or read(1)\n";
+	  std::cin >> calibrate;
+
+
+	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
+		  17.7872756163266,
+		  -6.798784049003872);
+
+	  cv::Mat mr = (cv::Mat1f(3, 1) << 2.178677563707194,
+		  2.096964130591053,
+		  0.1258202253438768);
+
+	  cv::Mat cam = (cv::Mat_<double>(3, 3) << 1053.314135376467, 0, 670.864138058805,
+		  0, 1059.961617203515, 291.5273582648912,
+		  0, 0, 1);
+
+	  cv::Mat pro = (cv::Mat1f(5, 1) << 0, 0, 0, 0, 0);
+	  libfreenect2::Freenect2 freenect2;
+	  libfreenect2::Freenect2Device *dev = 0;
+	  libfreenect2::PacketPipeline *pipeline = 0;
+	  libfreenect2::setGlobalLogger(NULL);
+	  if (freenect2.enumerateDevices() == 0) {
+		  std::cout << "no device connected!" << std::endl;
+		  return 0;
+	  }
+	  std::string serial = freenect2.getDefaultDeviceSerialNumber();
+	  if (!pipeline)
+		  pipeline = new libfreenect2::OpenGLPacketPipeline();
+	  dev = freenect2.openDevice(serial, pipeline);
+	  libfreenect2::SyncMultiFrameListener listener(libfreenect2::Frame::Color | libfreenect2::Frame::Ir | libfreenect2::Frame::Depth);
+	  dev->setColorFrameListener(&listener);
+	  dev->setIrAndDepthFrameListener(&listener);
+	  dev->start();
+
+			Calibration c;
+			c.setKinect(&listener);
+			c.setProjectorResolution(480, 640);
+			if (calibrate == 0) {
+				c.collectPoints(dev);
+				c.calibrate();
+				c.saveSettings("C:\\Users\\Adam\\Documents\\GitHub\\");
+			}
+			if (calibrate == 1)
+			{
+				c.readSettings("C:\\Users\\Adam\\Documents\\GitHub\\calibration2016613_0_43.bin");
+			}
+			Projector *projector = new Projector();
+			projector->setKinect(&listener, dev);
+			//projector->setMatrices(mt, mr, cam, pro);
+			projector->setMatrices(c.boardTranslations[0], c.boardRotations[0], c.cameraMatrix, c.distCoeffs);
+			projector->reproject(gpuView>0);
+	  
+	  dev->stop();
+	  dev->close();
+  }
   if(test == 3)
   {
 	  int gpuView = 0;
