@@ -9,6 +9,7 @@
 #include <libfreenect2/registration.h>
 #include <libfreenect2/packet_pipeline.h>
 
+
 class PlaneData
 {
 public:
@@ -34,16 +35,20 @@ public:
 	void setMatrices(cv::Mat mt, cv::Mat mr, cv::Mat cam, cv::Mat pro);
 	void setKinect(libfreenect2::SyncMultiFrameListener *listener, libfreenect2::Freenect2Device *dev);
 	void ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim);
+	void ctProjection(std::string ctFilePath, int xDim, int yDim, int zDim, bool PNG);
+	void ctProjection(std::string ctFilePath, int startPoint, int xDim, int yDim, int zDim, bool PNG);
 	void objProjection(std::string objPath, std::string objName);
 	void objProjectionOffline(std::string objPath, std::string objName, bool gpuView);
 	void reproject(bool gpuView = false);
 	void showRectangle(bool gpuView = false);
-
+	void setVirtualVolumeSpace(float x1, float x2, float y1, float y2, float z1, float z2);
 	int right, up, rotX;
+
 
 private:
 
 	int findIndex(int x, int y);
+	float virtualVolumeSpace[6] = {-0.4f, 0.4f, -0.4f, 0.4f, 0.5f, 1.0f}; // Xmin, Xmax, Ymin, Ymax, Zmin, Zmax
 	PlaneData findRectangle(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered);
 	PlaneData findRectangleAt(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered, int startX, int startY);
 

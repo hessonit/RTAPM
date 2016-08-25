@@ -41,7 +41,7 @@ public:
 	std::vector<cv::Mat>	 boardRotations, boardTranslations;
 	cv::Mat					 cameraMatrix, distCoeffs;
 private:
-	int										numberOfIterations = 5;
+	int										numberOfIterations = 4;
 	bool									calibrationEnd;
 	libfreenect2::SyncMultiFrameListener*	_listener;
 	cv::Mat									_chessBoard;

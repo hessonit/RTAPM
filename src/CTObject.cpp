@@ -91,7 +91,8 @@ void CTObject::readDataPNG()
 void CTObject::showData()
 {
 	cv::namedWindow("showData", CV_WINDOW_NORMAL);
-	cv::moveWindow("showData", 0, 0);
+	cv::moveWindow("showData", 1200, 0);
+	cv::setWindowProperty("showData", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 	for (int i = 0; i < zSize; i++)
 	{
 		cv::Mat image = cv::Mat(xSize, ySize, CV_8UC1, data[i]);
@@ -158,6 +159,11 @@ void CTObject::showDataFromView()
 char CTObject::at(int x, int y, int z)
 {
 	//_ASSERT(xSize > x && ySize > y && zSize > z);
+	if ((xSize <= x || ySize <= y || zSize <= z) || (0 > x || 0 > y || 0 > z))
+	{
+		//std::cout << "outside\n";
+		return data[0][0];
+	}
 	switch (view)
 	{
 	case FRONT:

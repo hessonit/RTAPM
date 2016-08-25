@@ -18,64 +18,11 @@ Calibration::Calibration()
 
 void Calibration::readSettings(std::string path)
 {
-	std::ifstream in(path, std::ios_base::binary);
-	float c1,c2,c3,c4,c5,c6,c7,c8,c9;
-	if (in.good())
-	{
-		in.read((char *)&c1, sizeof(float));
-		in.read((char *)&c2, sizeof(float));
-		in.read((char *)&c3, sizeof(float));
-		in.read((char *)&c4, sizeof(float));
-		in.read((char *)&c5, sizeof(float));
-		in.read((char *)&c6, sizeof(float));
-		in.read((char *)&c7, sizeof(float));
-		in.read((char *)&c8, sizeof(float));
-		in.read((char *)&c9, sizeof(float));
-
-		Mat cam = (cv::Mat_<double>(3, 3) << c1,c2,c3,
-											c4,c5,c6,
-											c7,c8,c9);
-
-
-		in.read((char *)&c1, sizeof(float));
-		in.read((char *)&c2, sizeof(float));
-		in.read((char *)&c3, sizeof(float));
-
-		Mat tra = (cv::Mat1f(3, 1) << c1,
-										c2,
-										c3);
-
-		in.read((char *)&c1, sizeof(float));
-		in.read((char *)&c2, sizeof(float));
-		in.read((char *)&c3, sizeof(float));
-
-		Mat rot = (cv::Mat1f(3, 1) << c1,
-										c2,
-										c3);
-
-		in.read((char *)&c1, sizeof(float));
-		in.read((char *)&c2, sizeof(float));
-		in.read((char *)&c3, sizeof(float));
-		in.read((char *)&c4, sizeof(float));
-		in.read((char *)&c5, sizeof(float));
-
-		Mat dist = (cv::Mat1f(5, 1) << c1, c2, c3, c4, c5);
-
-		cameraMatrix = cam;
-		vector<Mat> temp1;
-		temp1.push_back(tra);
-		boardTranslations = temp1;
-
-		vector<Mat> temp2;
-		temp2.push_back(tra);
-		boardRotations = temp2;
-
-		distCoeffs = dist;
-
-		in.close();
-	}
-
-
+	cv::FileStorage fs(path, FileStorage::READ);
+	fs["cameraMatrix"] >> cameraMatrix;
+	fs["boardTranslations"] >> boardTranslations;
+	fs["boardRotations"] >> boardRotations;
+	fs["distCoeffs"] >> distCoeffs;
 }
 void Calibration::saveSettings(std::string path)
 {
@@ -85,41 +32,14 @@ void Calibration::saveSettings(std::string path)
 								intToStr((now->tm_mon) + 1) +
 								intToStr((now->tm_mday)) + "_" +
 								intToStr((now->tm_hour)) + "_" + 
-								intToStr((now->tm_min)) + ".bin";
+								intToStr((now->tm_min)) + ".yml";
 
-	ofstream out(path+name, ios_base::binary);
-	if (out.good())
-	{
-		//std::cout << "Writing floating point number: " << std::fixed << f1 << std::endl;
-		out.write((char *)&cameraMatrix.at<float>(0, 0), sizeof(float));
-		out.write((char *)&cameraMatrix.at<float>(0, 1), sizeof(float));
-		out.write((char *)&cameraMatrix.at<float>(0, 2), sizeof(float));
-
-		out.write((char *)&cameraMatrix.at<float>(1, 0), sizeof(float));
-		out.write((char *)&cameraMatrix.at<float>(1, 1), sizeof(float));
-		out.write((char *)&cameraMatrix.at<float>(1, 2), sizeof(float));
-
-		out.write((char *)&cameraMatrix.at<float>(2, 0), sizeof(float));
-		out.write((char *)&cameraMatrix.at<float>(2, 1), sizeof(float));
-		out.write((char *)&cameraMatrix.at<float>(2, 2), sizeof(float));
-
-		out.write((char *)&boardTranslations[0].at<float>(0, 0), sizeof(float));
-		out.write((char *)&boardTranslations[0].at<float>(0, 1), sizeof(float));
-		out.write((char *)&boardTranslations[0].at<float>(0, 2), sizeof(float));
-
-		out.write((char *)&boardRotations[0].at<float>(0, 0), sizeof(float));
-		out.write((char *)&boardRotations[0].at<float>(0, 1), sizeof(float));
-		out.write((char *)&boardRotations[0].at<float>(0, 2), sizeof(float));
-
-		out.write((char *)&distCoeffs.at<float>(0, 0), sizeof(float));
-		out.write((char *)&distCoeffs.at<float>(0, 1), sizeof(float));
-		out.write((char *)&distCoeffs.at<float>(0, 2), sizeof(float));
-		out.write((char *)&distCoeffs.at<float>(0, 3), sizeof(float));
-		out.write((char *)&distCoeffs.at<float>(0, 4), sizeof(float));
-
-		out.close();
-	}
-
+	// write Mat to file
+	cv::FileStorage fs(path + name, cv::FileStorage::WRITE);
+	fs << "cameraMatrix" << cameraMatrix;
+	fs << "boardTranslations" << boardTranslations;
+	fs << "boardRotations" << boardRotations;
+	fs << "distCoeffs" << distCoeffs;
 }
 
 

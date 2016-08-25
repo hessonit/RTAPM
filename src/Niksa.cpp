@@ -318,20 +318,6 @@ if(tt == 1){
 	  std::cout << "calibrate(0) or read(1)\n";
 	  std::cin >> calibrate;
 
-
-	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
-		  17.7872756163266,
-		  -6.798784049003872);
-
-	  cv::Mat mr = (cv::Mat1f(3, 1) << 2.178677563707194,
-		  2.096964130591053,
-		  0.1258202253438768);
-
-	  cv::Mat cam = (cv::Mat_<double>(3, 3) << 1053.314135376467, 0, 670.864138058805,
-		  0, 1059.961617203515, 291.5273582648912,
-		  0, 0, 1);
-
-	  cv::Mat pro = (cv::Mat1f(5, 1) << 0, 0, 0, 0, 0);
 	  libfreenect2::Freenect2 freenect2;
 	  libfreenect2::Freenect2Device *dev = 0;
 	  libfreenect2::PacketPipeline *pipeline = 0;
@@ -348,7 +334,6 @@ if(tt == 1){
 	  dev->setColorFrameListener(&listener);
 	  dev->setIrAndDepthFrameListener(&listener);
 	  dev->start();
-
 			Calibration c;
 			c.setKinect(&listener);
 			c.setProjectorResolution(480, 640);
@@ -359,18 +344,18 @@ if(tt == 1){
 			}
 			if (calibrate == 1)
 			{
-				c.readSettings("C:\\Users\\Adam\\Documents\\GitHub\\calibration2016613_0_43.bin");
+				c.readSettings("C:\\Users\\Adam\\Documents\\GitHub\\calibration2016813_18_48.yml");
 			}
+			//std::cout << c.boardTranslations[0] << "\n" << c.boardRotations[0] << "\n" << c.cameraMatrix << "\n" <<  c.distCoeffs << "\n";
 			Projector *projector = new Projector();
 			projector->setKinect(&listener, dev);
-			//projector->setMatrices(mt, mr, cam, pro);
 			projector->setMatrices(c.boardTranslations[0], c.boardRotations[0], c.cameraMatrix, c.distCoeffs);
 			projector->reproject(gpuView>0);
 	  
 	  dev->stop();
 	  dev->close();
   }
-  if(test == 3)
+  if(test == 3) // Plane scan
   {
 	  int gpuView = 0;
 	  std::cout << "CPU view(0) or GPU view(1)\n";
@@ -411,7 +396,11 @@ if(tt == 1){
 	  dev->stop();
 	  dev->close();
   }
-  if (test == 4) {
+  if (test == 4) { // volume exploration mode
+	  int setVirtualSpace = 0;
+	  std::cout << "standard space(0) or custom space(1)\n";
+	  std::cin >> setVirtualSpace;
+
 	  libfreenect2::Freenect2 freenect2;
 	  libfreenect2::Freenect2Device *dev = 0;
 	  libfreenect2::PacketPipeline *pipeline = 0;
@@ -428,10 +417,21 @@ if(tt == 1){
 	  dev->setColorFrameListener(&listener);
 	  dev->setIrAndDepthFrameListener(&listener);
 	  dev->start();
+		  Calibration c;
+		  c.readSettings("C:\\Users\\Adam\\Documents\\GitHub\\calibration2016813_18_48.yml");
 		  Projector *projector = new Projector();
 		  projector->setKinect(&listener, dev);
-		  projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.", 256, 256, 106);
-		  //"C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain
+		  projector->setMatrices(c.boardTranslations[0], c.boardRotations[0], c.cameraMatrix, c.distCoeffs);
+		  if (setVirtualSpace == 1)
+		  {
+			  float x1, x2, y1, y2, z1, z2;
+			  std::cin >> x1 >> x2 >> y1 >> y2 >> z1 >> z2;
+			  projector->setVirtualVolumeSpace(x1, x2, y1, y2, z1, z2);
+		  }
+		  
+		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.", 256, 256, 106);
+		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\VHMCT1mm_Head\\Head_png\\vhm.", 1001, 512, 512, 244, true);
+		  projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\VHF-Head\\head_png\\vhf.", 1501, 512, 512, 233, true);
 		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\", 512, 512, 360);
 	  dev->stop();
 	  dev->close();
@@ -476,7 +476,7 @@ if(tt == 1){
 	  dev->stop();
 	  dev->close();
   }
-  if (test == 6)
+  if (test == 6) // show CT data in loop
   {
 	  //SIDE view = SIDE::BOTTOM;
 	  std::string pathBunny = "C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\";
@@ -491,7 +491,7 @@ if(tt == 1){
 	  obj.showData();
 	  //obj.showDataFromView();
   }
-  if (test == 7) {
+  if (test == 7) { // reprojection 2
 	  int gpuView = 0;
 	  std::cout << "CPU view(0) or GPU view(1)\n";
 	  std::cin >> gpuView;
@@ -532,7 +532,7 @@ if(tt == 1){
 	  dev->close();
   }
 
-  if (test == 8) {
+  if (test == 8) { // test if vtk works
 	  objObject obj("C:\\Users\\Adam\\Desktop\\volumetric data\\sibenik\\", "sibenik");
 	  obj.loadData();
 	  cv::namedWindow("objTest", CV_WINDOW_NORMAL);
@@ -546,7 +546,7 @@ if(tt == 1){
 	  }
 	  cv::destroyWindow("objTest");
   }
-  if (test == 9)
+  if (test == 9) // model exploration mode
   {
 	  cv::Mat mt = (cv::Mat1f(3, 1) << 14.9566527691241,
 		  17.7872756163266,

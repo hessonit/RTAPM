@@ -12,7 +12,7 @@
 
 
 // cv::Mat createChessboard(int columns, int rows);
-
+static const double PI = 3.1415;
 
 int doSomething(int s);
 
