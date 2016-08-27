@@ -431,7 +431,7 @@ if(tt == 1){
 		  
 		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\MRbrain\\MRbrain.", 256, 256, 106);
 		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\VHMCT1mm_Head\\Head_png\\vhm.", 1001, 512, 512, 244, true);
-		  projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\VHF-Head\\head_png\\vhf.", 1501, 512, 512, 233, true);
+		  projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\VHF-Head\\head_png_2\\vhf.", 1501, 512, 512, 233, true);
 		  //projector->ctProjection("C:\\Users\\Adam\\Desktop\\volumetric data\\bunny-ctscan\\bunny\\", 512, 512, 360);
 	  dev->stop();
 	  dev->close();

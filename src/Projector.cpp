@@ -40,58 +40,37 @@ void Projector::ctProjection(std::string ctFilePath, int xDim, int yDim, int zDi
 
 void tst(libfreenect2::Registration* registration, libfreenect2::Frame *undistorted, libfreenect2::Frame *registered,
 	int st, int ed, cv::Mat *board, CTObject *ctObject, int right, int up,
-	cv::Mat _mt, cv::Mat _mr, cv::Mat _cam, cv::Mat _pro, cv::Mat *depthFrame, cv::Mat *temp_board) {
+	cv::Mat _mt, cv::Mat _mr, cv::Mat _cam, cv::Mat _pro, cv::Mat *depthFrame, cv::Mat *temp_board, 
+	int *minX, int *maxX, int *minY, int *maxY) {
 	float virtualVolumeSpace[6] = {-0.2f, 0.2f, -0.2f, 0.2f, 0.5f, 1.0f}; // tO-DO fix that
+	int xDiv = (512 / abs(virtualVolumeSpace[0] - virtualVolumeSpace[1]));
+	int yDiv = (512 / abs(virtualVolumeSpace[2] - virtualVolumeSpace[3]));
+	int zDiv = (233 / abs(virtualVolumeSpace[4] - virtualVolumeSpace[5]));
+	double xRight = right / ((double)640.0);
+	double yUp = up / ((double)480.0);
 	for (int i = st; i < ed; i++)
 	{
 		for (int j = 0; j < 424; j++)
 		{
 			float x = 0, y = 0, z = 0, color = 0;
-			registration->getPointXYZRGB(undistorted, registered,
+			/*registration->getPointXYZRGB(undistorted, registered,
 				j, i,
-				x, y, z, color);
-			z = depthFrame->at<float>(j, i);
-
-			//std::cout << x << " " << y << " " << z << "\n";
-			//if (z >= virtualVolumeSpace[4] && z <= virtualVolumeSpace[5] &&
-			//	x >= virtualVolumeSpace[0] && x <= virtualVolumeSpace[1] &&
-			//	y >= virtualVolumeSpace[2] && y <= virtualVolumeSpace[3]) {
-
-			//	int xVal = (x + abs(virtualVolumeSpace[0]))*(512 / abs(virtualVolumeSpace[0] - virtualVolumeSpace[1]));
-			//	int yVal = (y + abs(virtualVolumeSpace[2]))*(512 / abs(virtualVolumeSpace[2] - virtualVolumeSpace[3]));
-			//	int zVal = (z - abs(virtualVolumeSpace[4]))*(233 / abs(virtualVolumeSpace[4] - virtualVolumeSpace[5]));
-
-			//	x = static_cast<float>(x + right / ((double)640.0));
-			//	y = static_cast<float>(y + up / ((double)480.0));
-
-			//	std::vector<cv::Point3f> wrldSrc;
-			//	wrldSrc.push_back(cv::Point3f(x, y, z) * 100); //
-			//	std::vector<cv::Point2f> projected;// = projectPoints(wrldSrc);
-			//	cv::projectPoints(wrldSrc, _mt, _mr, _cam, _pro, projected);
-			//	//std::cout << projected[0] << "\n";
-			//	if (480 - projected[0].x >0 && projected[0].y > 0 &&
-			//		480 - projected[0].x < 475 && projected[0].y < 630) {
-
-			//		cv::Mat ROI = (*board)(cv::Rect(static_cast<int>(projected[0].y), static_cast<int>(480 - projected[0].x), 1, 1));
-			//		char value = ctObject->at(xVal, yVal, zVal);
-			//		ROI.setTo(cv::Scalar(value, value, value, 100));
-			//	}
-
-			//	//cv::Mat ROI = board(cv::Rect(i, j, 1, 1));
-			//	//char value = ctObject.at(xVal, yVal, zVal);
-			//	//ROI.setTo(cv::Scalar(value, value, value, 100));
-			//}
+				x, y, z, color);*/
+			registration->getPointXYZ(undistorted,
+				j, i,
+				x, y, z);
+			//z = depthFrame->at<float>(j, i);
 
 			if (z >= virtualVolumeSpace[4] && z <= virtualVolumeSpace[5] &&
 				x >= virtualVolumeSpace[0] && x <= virtualVolumeSpace[1] &&
 				y >= virtualVolumeSpace[2] && y <= virtualVolumeSpace[3]) {
 
-				int xVal = (x + abs(virtualVolumeSpace[0]))*(512 / abs(virtualVolumeSpace[0] - virtualVolumeSpace[1]));
-				int yVal = (y + abs(virtualVolumeSpace[2]))*(512 / abs(virtualVolumeSpace[2] - virtualVolumeSpace[3]));
-				int zVal = (z - abs(virtualVolumeSpace[4]))*(233 / abs(virtualVolumeSpace[4] - virtualVolumeSpace[5]));
+				int xVal = (x + abs(virtualVolumeSpace[0]))*xDiv;
+				int yVal = (y + abs(virtualVolumeSpace[2]))*yDiv;
+				int zVal = (z - abs(virtualVolumeSpace[4]))*zDiv;
 
-				x = static_cast<float>(x + right / ((double)640.0));
-				y = static_cast<float>(y + up / ((double)480.0));
+				x = static_cast<float>(x + xRight);
+				y = static_cast<float>(y + yUp);
 
 				std::vector<cv::Point3f> wrldSrc;
 				wrldSrc.push_back(cv::Point3f(x, y, z) * 100);
@@ -103,6 +82,12 @@ void tst(libfreenect2::Registration* registration, libfreenect2::Frame *undistor
 					temp_board->at<cv::Vec3s>(static_cast<int>(480 - projected[0].x), static_cast<int>(projected[0].y))[0] = (short)xVal;
 					temp_board->at<cv::Vec3s>(static_cast<int>(480 - projected[0].x), static_cast<int>(projected[0].y))[1] = (short)yVal;
 					temp_board->at<cv::Vec3s>(static_cast<int>(480 - projected[0].x), static_cast<int>(projected[0].y))[2] = (short)zVal;
+					if (480 - projected[0].x < *minX) *minX = 480 - projected[0].x;
+					if (480 - projected[0].x > *maxX) *maxX = 480 - projected[0].x;
+					if (projected[0].y < *minY) *minY = projected[0].y;
+					if (projected[0].y > *maxY) *maxY = projected[0].y;
+
+
 				}
 				//cv::Mat ROI = board(cv::Rect(i, j, 1, 1));
 				//char value = ctObject.at(xVal, yVal, zVal);
@@ -159,6 +144,84 @@ cv::Mat pseudoBoxFilter(cv::Mat in, cv::Mat out, cv::Size ksize)
 	return result;
 }
 
+
+void tt2(cv::Mat *board, int start, int end, cv::Size ksize, int minX, int maxX, int minY, int maxY)
+{
+	cv::Mat result = cv::Mat(*board);
+	cv::Mat div(480, 640, CV_8UC1, cv::Scalar::all(0));
+	int h = ksize.height;
+	int w = ksize.width;
+	int stX = max(max(start, h / 2), minX);
+	int edX = min(min(end, board->size[0] - h / 2), maxX);
+
+	int stY = max(w / 2, minY);
+	int edY = min(board->size[1] - w / 2, maxY);
+
+	int pow[10] = { 0,1,4,9,16,25,36,49,64,81 };
+	for (int i = stX; i < edX; i++)
+	{
+		for (int j = stY; j < edY; j++)
+		{
+			cv::Vec3s v = board->at<cv::Vec3s>(i, j);
+			if (v[0] != 0 && v[1] != 0 && v[2] != 0 && v[1])
+			{
+				for (int ii = i - h / 2; ii < i + h / 2; ii++)
+				{
+					for (int jj = j - w / 2; jj < j + w / 2; jj++)
+					{
+						cv::Vec3s vv = board->at<cv::Vec3s>(ii, jj);
+						if (abs(ii - i) + abs(jj - j) <= h / 2 + 1 && vv[0] == 0 && vv[1] == 0 && vv[2] == 0)
+						{
+							result.at<cv::Vec3s>(ii, jj)[0] += v[0] * pow[((h / 2) - max(abs(ii - i), abs(jj - j)) + 1)];
+							result.at<cv::Vec3s>(ii, jj)[1] += v[1] * pow[((h / 2) - max(abs(ii - i), abs(jj - j)) + 1)];
+							result.at<cv::Vec3s>(ii, jj)[2] += v[2] * pow[((h / 2) - max(abs(ii - i), abs(jj - j)) + 1)];
+							div.at<char>(ii, jj) += pow[((h / 2) - max(abs(ii - i), abs(jj - j)) + 1)];
+						}
+					}
+				}
+			}
+		}
+	}
+	for (int i = 0; i < board->size[0]; i++)
+	{
+		for (int j = 0; j < board->size[1]; j++)
+		{
+			if (div.at<char>(i, j) != 0)
+				board->at<cv::Vec3s>(i, j) = result.at<cv::Vec3s>(i, j) / div.at<char>(i, j);
+		}
+	}
+
+}
+
+void tt3(cv::Mat *board, cv::Mat *temp_board, CTObject *ctObject, int start, int end)
+{
+	for (int i = start; i < end; i++)
+	{
+		for (int j = 0; j < 640; j++)
+		{
+			//cv::Mat ROI = (*board)(cv::Rect(j, i, 1, 1));
+			cv::Vec4b v2 = board->at<cv::Vec4b>(i, j);
+			cv::Vec3s v = temp_board->at<cv::Vec3s>(i, j);
+			unsigned char value = ctObject->at(v[0], v[1], v[2]);
+			v2[0] = v2[1] = v2[2] = value;
+			//v2[1] = value;
+			//v2[1] = value;
+			//ROI.setTo(cv::Scalar(value, value, value, 100));
+		}
+	}
+}
+
+void loadNextFrame(libfreenect2::SyncMultiFrameListener *_listener, libfreenect2::FrameMap *frames, libfreenect2::Frame *rgb, libfreenect2::Frame *depth,
+	libfreenect2::Registration* registration, libfreenect2::Frame *undistorted)
+{
+	_listener->release(*frames);
+	//libfreenect2::FrameMap frames;
+	(_listener)->waitForNewFrame(*frames);
+	rgb = (*frames)[libfreenect2::Frame::Color];
+	depth = (*frames)[libfreenect2::Frame::Depth];
+	registration->undistortDepth(depth, undistorted);
+	//registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
+}
 void Projector::ctProjection(std::string ctFilePath, int startPoint, int xDim, int yDim, int zDim, bool PNG)
 {
 	SimpleViewer viewer;
@@ -172,91 +235,122 @@ void Projector::ctProjection(std::string ctFilePath, int startPoint, int xDim, i
 	libfreenect2::Frame undistorted(512, 424, 4), registered(512, 424, 4);
 	bool shutdown = false;
 	cv::Mat board(480, 640, CV_8UC4, cv::Scalar::all(0));
-	cv::namedWindow("CTviewer", CV_WINDOW_NORMAL);
-	cv::moveWindow("CTviewer", 00, 0);
+	//cv::namedWindow("CTviewer", CV_WINDOW_NORMAL);
+	//cv::moveWindow("CTviewer", 00, 0);
 	//cv::setWindowProperty("CTviewer", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
-	//{
-	//	viewer.setSize(480, 640); // TO-DO change resolution
-	//	viewer.initialize();
-	//	libfreenect2::Frame b(640, 480, 4);
-	//	b.data = board.data;
-	//	viewer.addFrame("RGB", &b);
-	//	shutdown = shutdown || viewer.render();
-	//}
+	{
+		viewer.setSize(480, 640); // TO-DO change resolution
+		viewer.initialize();
+		libfreenect2::Frame b(640, 480, 4);
+		b.data = board.data;
+		viewer.addFrame("RGB", &b);
+		shutdown = shutdown || viewer.render();
+	}
+	libfreenect2::Frame *rgb;
+	libfreenect2::Frame *depth;
+	
+	(_listener)->waitForNewFrame(frames);
+	rgb = frames[libfreenect2::Frame::Color];
+	depth = frames[libfreenect2::Frame::Depth];
+	registration->undistortDepth(depth, &undistorted);
+
 	while (!shutdown)
 	{
+		std::thread *nextFrame = new std::thread[1];
+		/*(_listener)->waitForNewFrame(frames);
+		rgb = frames[libfreenect2::Frame::Color];
+		depth = frames[libfreenect2::Frame::Depth];
 
-		(_listener)->waitForNewFrame(frames);
-		
-		libfreenect2::Frame *rgb = frames[libfreenect2::Frame::Color];
-		libfreenect2::Frame *depth = frames[libfreenect2::Frame::Depth];
+		registration->undistortDepth(depth, &undistorted);*/
+		//registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
 
-		registration->apply(rgb, depth, &undistorted, &registered, true, NULL, NULL);
-
-		cv::Mat frame = frameToMat("registered", &registered);
-		cv::Mat depthFrame = frameToMat("depth", depth);
+		//cv::Mat frame = frameToMat("registered", &registered);
+		cv::Mat depthFrame;// = frameToMat("depth", depth);
 		//cv::Mat board(424, 512, CV_8UC4, cv::Scalar::all(0));
 		board = cv::Mat(480, 640, CV_8UC4, cv::Scalar::all(0));
-		
-		depthFrame *= 0.001;
+
+		//depthFrame *= 0.001;
 		cv::Mat temp_board(480, 640, CV_16UC3, cv::Scalar::all(0));
 
-		int parts = 16;
+		int parts = 128;
 		int jump = 512 / parts;
+		
+		int minX = 999;
+		int maxX = -1;
+		int minY = 999;
+		int maxY = -1;
 		std::thread *tt = new std::thread[parts];
-		//for (int i = 0; i < parts; ++i) {
-		//	tt[i] = std::thread(tst, registration, &undistorted, &registered, 0, 512, &board, &ctObject,
-		//		right, up, _mr, _mt, _cam, _pro, &depthFrame);
-		//}
+
 		for (int i = 0; i < parts; ++i) {
 			tt[i] = std::thread(tst, registration, &undistorted, &registered, jump * i, jump + jump * i, &board, &ctObject,
-				right, up, _mr, _mt, _cam, _pro, &depthFrame, &temp_board);
+				right, up, _mr, _mt, _cam, _pro, &depthFrame, &temp_board, &minX, &maxX, &minY, &maxY);
+		}
+		
+		for (int i = 0; i < parts; ++i)
+			tt[i].join();
+		//_listener->release(frames);
+		nextFrame[0] = std::thread(loadNextFrame, _listener, &frames, rgb, depth, registration, &undistorted);
+
+		int parts2 = 8;
+		int jump2 = 512 / parts2;
+		for (int ii = 0; ii < 3; ii++) {
+			for (int i = 0; i < parts2; ++i) {
+				tt[i] = std::thread(tt2, &temp_board, jump2 * i, jump2 + jump2 * i, cv::Size(3, 3), minX, maxX, minY, maxY);
+			}
+
+			for (int i = 0; i < parts2; ++i)
+				tt[i].join();
 		}
 
-		for (int i = 0; i < parts; ++i)
-			  tt[i].join();
-
-
-		//cv::GaussianBlur(temp_board, temp_board, cv::Size(7, 7), 5, 11);
-		//cv::dilate(temp_board, temp_board, cv::Mat(), cv::Point(-1, -1), 2, 1, 1);
-		//cv::Mat small_temp;
-		//cv::resize(temp_board, temp_board, cv::Size(), 0.7, 0.7);
-		//cv::inpaint(small_temp, (small_temp == cv::Vec3s(0, 0, 0)), small_temp, 5, cv::INPAINT_TELEA);
-
-		for (int i = 0; i < 3; i++)
-			temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(3, 3));
 		
-		//temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(5, 5));
+		//for (int i = 0; i < 3; i++)
+			//temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(3, 3));
+
+		//temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(3, 3));
+		//temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(7, 7));
 		//temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(7, 7));
 		
-		//temp_board = pseudoBoxFilter(temp_board, temp_board, cv::Size(3, 3));
-		//cv::resize(temp_board, temp_board, board.size());
-		cv::medianBlur(temp_board, temp_board, 5); // TO-DO check if needed
+		//cv::medianBlur(temp_board, temp_board, 5); // TO-DO check if needed
 		//cv::GaussianBlur(temp_board, temp_board, cv::Size(3, 3), 0, 1);
-		for (int i = 0; i < 480; i++)
+		//int parts3 = 16;
+		//int jump3 = 480 / parts3;
+		//std::thread *tt2 = new std::thread[parts];
+		//for (int i = 0; i < parts3; ++i) {
+		//	tt2[i] = std::thread(tt3, &board, &temp_board, &ctObject, jump3 * i, jump3 + jump3 * i);
+		//	//std::cout << jump3 * i << " " << jump3 + jump3 * i << "\n";
+		//}
+
+		//for (int i = 0; i < parts; ++i)
+		//	tt2[i].join();
+		//std::cout << "zuoooooo\n";
+		/*for (int i = 0; i < 480; i++)
 		{
 			for (int j = 0; j < 640; j++)
 			{
 				cv::Mat ROI = board(cv::Rect(j, i, 1, 1));
 				cv::Vec3s v = temp_board.at<cv::Vec3s>(i, j);
-				char value = ctObject.at(v[0], v[1], v[2]);
+				unsigned char value = ctObject.at(v[0], v[1], v[2]);
 				ROI.setTo(cv::Scalar(value, value, value, 100));
 			}
-		}
+		}*/
 
 		
-		cv::imshow("CTviewer", board);
+		//cv::imshow("CTviewer", board);
 		
-		/*{
+		{
 			libfreenect2::Frame b(640, 480, 4);
 			b.data = board.data;
 			viewer.addFrame("RGB", &b);
 			shutdown = shutdown || viewer.render();
-		}*/
+		}
 
-		_listener->release(frames);
+		//_listener->release(frames);
+		nextFrame[0].join();
 		delete[] tt;
-		{
+		delete[] nextFrame;
+		
+		//delete[] tt2;
+		/*{
 			int op = cv::waitKey(1);
 			if (op == 100 || (char)(op) == 'd') right -= 1;
 			if (op == 115 || (char)(op) == 's') up += 1;
@@ -269,7 +363,7 @@ void Projector::ctProjection(std::string ctFilePath, int startPoint, int xDim, i
 				shutdown = true;
 				cv::destroyWindow("CTviewer");
 			}
-		}
+		}*/
 	}
 
 
